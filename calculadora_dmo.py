@@ -5,8 +5,29 @@ from tkinter import ttk, messagebox
 import requests
 from bs4 import BeautifulSoup
 import threading
+import queue
 import json
 import os
+import time
+from datetime import datetime, timedelta
+
+try:
+    from curl_cffi import requests as curl_requests
+    _curl_available = True
+except Exception:
+    _curl_available = False
+
+try:
+    import cloudscraper
+    _scraper = cloudscraper.create_scraper(
+        browser={
+            'browser': 'chrome',
+            'platform': 'windows',
+            'desktop': True
+        }
+    )
+except Exception:
+    _scraper = None
 
 CLONE_DATA = [
     (0,  "0%",   "0%",   "0%",   "0%",   "0%"),
@@ -38,6 +59,21 @@ for l, ap, cp, bp, ep, hp in CLONE_DATA:
         float(hp.rstrip('%')) / 100,
     ))
 
+# Single source of truth for evolution multipliers
+EVO_DATA = {
+    "Rookie": 1.0,
+    "Champion": 1.5,
+    "Ultimate": 1.85,
+    "Armor": 1.85,
+    "Spirit": 1.85,
+    "Mega": 2.0,
+    "Burst Mode": 2.5,
+    "Side Mega": 2.5,
+    "Variant": 2.5,
+    "Jogress": 3.0,
+    "Fusion": 3.0,
+}
+
 EVO_OPTIONS = [
     ("Rookie", 1.0),
     ("Champion", 1.5),
@@ -48,46 +84,389 @@ EVO_OPTIONS = [
 ]
 
 FLAT_CATEGORIES = [
-    "Selos",
-    "Chipset",
-    "D-Unit",
-    "Equipamentos",
-    "Achievements",
-    "Buff Tamer",
+    "Selos", "Chipset", "D-Unit", "Equipamentos", "Achievements", "Buff Tamer",
 ]
 
-STAT_LABELS = ["HP", "DS", "AT", "CT (%)", "HT (%)", "DE"]
+STAT_LABELS = ["HP", "DS", "AT", "CT (%)", "HT", "DE"]
 STAT_KEYS = ["hp", "ds", "at", "ct", "ht", "de"]
-
-FORM_TO_MULT = {
-    "Rookie": 1.0,
-    "Champion": 1.5,
-    "Ultimate": 1.85,
-    "Armor": 1.85,
-    "Spirit": 1.85,
-    "Mega": 2.0,
-    "Burst Mode": 2.5,
-    "Variant": 2.5,
-    "Jogress": 3.0,
+WIKI_SIZE = 1.4  # size multiplier used by wiki for "final" column
+SNAP_YEARS = ["2026id_", "2025id_", "2024id_", "2023id_"]
+WIKI_ROW_MAP = {
+    "health points": "hp",
+    "digi-soul": "ds",
+    "attack": "at",
+    "critical hit": "ct",
+    "hit rate": "ht",
+    "defense": "de",
 }
+NAME_ALIASES = {
+    "alphamon ouryouken x extreme": "Alphamon Ouryuken (Extreme)",
+    "alphamon ouryuken x extreme": "Alphamon Ouryuken (Extreme)",
+    "alphamon ouryouken extreme": "Alphamon Ouryuken (Extreme)",
+    "alphamon ouryuken extreme": "Alphamon Ouryuken (Extreme)",
+    "alphamon ouryouken awaken": "Alphamon Ouryuken (Awaken)",
+    "alphamon ouryuken awaken": "Alphamon Ouryuken (Awaken)",
+}
+
+_form_to_mult_map = {}
+for _k, _v in EVO_DATA.items():
+    _form_to_mult_map[_k.lower()] = _v
 
 
 def form_to_mult(form):
     if not form:
         return None
-    if form in FORM_TO_MULT:
-        return FORM_TO_MULT[form]
+    key = form.strip().lower()
+    if key in _form_to_mult_map:
+        return _form_to_mult_map[key]
     for part in form.split("/"):
-        part = part.strip()
-        if part in FORM_TO_MULT:
-            return FORM_TO_MULT[part]
+        part = part.strip().lower()
+        if part in _form_to_mult_map:
+            return _form_to_mult_map[part]
         for word in part.split():
-            if word in FORM_TO_MULT:
-                return FORM_TO_MULT[word]
+            word = word.strip().lower()
+            if word in _form_to_mult_map:
+                return _form_to_mult_map[word]
     return None
 
 
-WAYBACK = "https://web.archive.org/web/2025/https://dmowiki.com"
+_cache_lock = threading.Lock()
+_cache_dict = None
+CACHE_TTL_DAYS = 7
+
+
+def _get_cache_dir():
+    if getattr(sys, 'frozen', False):
+        return os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), "CalculadoraDMO")
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+_cache_path = os.path.join(_get_cache_dir(), "digimon_stats_cache.json")
+MANUAL_HTML_DIR = os.path.join(_get_cache_dir(), "manual_html")
+
+
+def _load_cache():
+    global _cache_dict
+    if _cache_dict is not None:
+        return _cache_dict
+    try:
+        if os.path.exists(_cache_path):
+            with open(_cache_path, encoding="utf-8") as f:
+                _cache_dict = json.load(f)
+                return _cache_dict
+    except Exception:
+        pass
+    return {}
+
+
+def _save_cache(data):
+    global _cache_dict
+    name = data.get("_name", "")
+    if not name:
+        return
+    with _cache_lock:
+        _cache_dict = _load_cache()
+        entry = {k: v for k, v in data.items() if not k.startswith("_")}
+        entry["_cached_at"] = datetime.now().isoformat()
+        _cache_dict[name] = entry
+        try:
+            os.makedirs(os.path.dirname(_cache_path), exist_ok=True)
+            with open(_cache_path, "w", encoding="utf-8") as f:
+                json.dump(_cache_dict, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
+
+def _cache_is_fresh(name):
+    cache = _load_cache()
+    entry = cache.get(name)
+    if not entry:
+        return False
+    cached_at = entry.get("_cached_at")
+    if not cached_at:
+        return False
+    try:
+        dt = datetime.fromisoformat(cached_at)
+        return datetime.now() - dt < timedelta(days=CACHE_TTL_DAYS)
+    except Exception:
+        return False
+
+
+def _normalize_name_key(name):
+    text = re.sub(r"\s+", " ", str(name or "").strip().lower())
+    text = text.replace("_", " ")
+    text = re.sub(r"[\'\":]", "", text)
+    text = text.replace("(", " ").replace(")", " ")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _candidate_page_names(name):
+    clean = name.strip()
+    if not clean:
+        return []
+
+    candidates = []
+    seen = set()
+
+    def add(value):
+        if not value:
+            return
+        value = value.strip()
+        key = value.lower()
+        if not value or key in seen:
+            return
+        seen.add(key)
+        candidates.append(value)
+
+    add(clean)
+
+    alias = NAME_ALIASES.get(_normalize_name_key(clean))
+    if alias:
+        add(alias)
+
+    normalized = _normalize_name_key(clean)
+    for known in DIGIMON_NAMES:
+        if _normalize_name_key(known) == normalized:
+            add(known)
+
+    loose_variants = [
+        clean.replace("Ouryouken", "Ouryuken"),
+        clean.replace("ouryouken", "ouryuken"),
+        clean.replace(" X Extreme", " (Extreme)"),
+        clean.replace(" x extreme", " (Extreme)"),
+        clean.replace(" Extreme", " (Extreme)"),
+        clean.replace(" Awaken", " (Awaken)"),
+    ]
+    for variant in loose_variants:
+        if variant != clean:
+            add(variant)
+            alias = NAME_ALIASES.get(_normalize_name_key(variant))
+            if alias:
+                add(alias)
+            for known in DIGIMON_NAMES:
+                if _normalize_name_key(known) == _normalize_name_key(variant):
+                    add(known)
+
+    return candidates
+
+
+def _normalize_stat_text(value, *, percent=False):
+    if value is None:
+        return None
+    text = str(value).replace("\xa0", " ").strip()
+    if not text:
+        return None
+    text = re.sub(r"\s+", "", text)
+    if percent:
+        if "%" not in text:
+            return None
+        text = text.replace("%", "")
+        if not text:
+            return None
+        if "," in text and "." in text:
+            text = text.replace(",", "")
+        elif "," in text:
+            text = text.replace(",", ".")
+        return f"{text}%"
+    if "," in text and "." in text:
+        text = text.replace(",", "")
+    elif "," in text:
+        text = text.replace(",", "")
+    return text
+
+
+def _is_valid_stat_text(key, value):
+    if value is None:
+        return key == "ht_base"
+    pattern = r"\d+(?:\.\d+)?%"
+    if key not in {"ct", "ct_base"}:
+        pattern = r"\d+(?:\.\d+)?"
+    return re.fullmatch(pattern, str(value)) is not None
+
+
+def _validate_parsed_data(data):
+    if not data:
+        return None
+    result = dict(data)
+    if not result.get("form") or not result.get("level_cap"):
+        return None
+    for key in STAT_KEYS:
+        percent = key == "ct"
+        normalized = _normalize_stat_text(result.get(key), percent=percent)
+        if not _is_valid_stat_text(key, normalized):
+            return None
+        result[key] = normalized
+
+        base_key = f"{key}_base"
+        normalized_base = _normalize_stat_text(result.get(base_key), percent=percent)
+        if _is_valid_stat_text(base_key, normalized_base):
+            result[base_key] = normalized_base
+        else:
+            result[base_key] = None
+    return result
+
+
+def _try_dmowiki(clean, candidate):
+    """Try direct dmowiki: curl_cffi (primary) then cloudscraper (fallback)."""
+    url = f"https://dmowiki.com/{candidate}"
+
+    # 1) curl_cffi with Chrome TLS fingerprint
+    if _curl_available:
+        try:
+            resp = curl_requests.get(url, timeout=20, impersonate="chrome")
+            if resp.status_code == 200 and "Just a moment" not in resp.text:
+                _save_debug_html(f"{clean}_{candidate}", resp.text)
+                data = _validate_parsed_data(parse_wiki_table(resp.text))
+                if data:
+                    data["_source"] = "dmowiki"
+                    data["_name"] = clean
+                    _save_cache(data)
+                    return data
+        except Exception:
+            pass
+
+    # 2) Fallback: cloudscraper
+    if _scraper:
+        try:
+            resp = _scraper.get(url, timeout=20)
+            if resp.status_code == 200 and "Just a moment" not in resp.text:
+                _save_debug_html(f"{clean}_{candidate}", resp.text)
+                data = _validate_parsed_data(parse_wiki_table(resp.text))
+                if data:
+                    data["_source"] = "dmowiki"
+                    data["_name"] = clean
+                    _save_cache(data)
+                    return data
+        except requests.RequestException:
+            pass
+        except Exception:
+            pass
+
+    return None
+
+
+def _try_wayback(clean, candidate):
+    """Try Wayback Machine snapshots."""
+    for snap in SNAP_YEARS:
+        url = f"https://web.archive.org/web/{snap}/https://dmowiki.com/{candidate}"
+        try:
+            resp = requests.get(url, timeout=15, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            })
+        except requests.RequestException:
+            continue
+        if resp.status_code != 200:
+            continue
+        if "Just a moment" in resp.text or "challenges.cloudflare.com" in resp.text:
+            continue
+        _save_debug_html(f"{clean}_{candidate}", resp.text)
+        data = _validate_parsed_data(parse_wiki_table(resp.text))
+        if data is None:
+            continue
+        data["_source"] = f"Wayback-{snap}"
+        data["_name"] = clean
+        _save_cache(data)
+        return data
+        break
+    return None
+
+
+def _try_cache(clean):
+    """Check JSON cache for existing data."""
+    cache = _load_cache()
+    return _validate_parsed_data(cache.get(clean))
+
+
+def _scan_manual_html():
+    """Scan manual_html folder and return dict {name: filepath, name_underscore: filepath}."""
+    files = {}
+    if not os.path.isdir(MANUAL_HTML_DIR):
+        return files
+    for fname in os.listdir(MANUAL_HTML_DIR):
+        if fname.lower().endswith(".html"):
+            name = os.path.splitext(fname)[0]
+            files[name] = os.path.join(MANUAL_HTML_DIR, fname)
+            # Also index underscore variant if name has spaces
+            if " " in name:
+                files[name.replace(" ", "_")] = os.path.join(MANUAL_HTML_DIR, fname)
+    return files
+
+
+def _try_manual_html(clean):
+    """Look for a manually saved HTML file in manual_html/."""
+    files = _scan_manual_html()
+    if not files:
+        return None
+    # Build candidate list: exact name, with underscores, without colons/apostrophes, partial
+    candidates = [
+        clean,
+        clean.replace(" ", "_"),
+        clean.replace(":", "").replace("'", "").replace(" ", "_"),
+        clean.replace(":", "").replace("'", ""),
+    ]
+    # Also try progressively shorter name (for when file has a shorter name)
+    parts = clean.replace(" ", "_").split("_")
+    for i in range(len(parts) - 1, 0, -1):
+        candidates.append("_".join(parts[:i]))
+        candidates.append(" ".join(parts[:i]))
+    path = None
+    for candidate in candidates:
+        if candidate in files:
+            path = files[candidate]
+            break
+    if path is None:
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            html = f.read()
+    except Exception:
+        return None
+    data = _validate_parsed_data(parse_wiki_table(html))
+    if data:
+        data["_source"] = "manual_html"
+        data["_name"] = clean
+        _save_cache(data)
+        return data
+    return None
+
+
+def search_digimon(name):
+    clean = name.strip()
+    if not clean:
+        return None
+
+    page_names = _candidate_page_names(clean)
+
+    # 1) dmowiki direct — live data (most up-to-date)
+    for page_name in page_names:
+        candidate = page_name.replace(" ", "_")
+        data = _try_dmowiki(page_name, candidate)
+        if data:
+            return data
+
+    # 2) Manual HTML (user saves from browser to bypass Cloudflare)
+    for page_name in page_names:
+        data = _try_manual_html(page_name)
+        if data:
+            return data
+
+    # 3) Local cache
+    for page_name in page_names:
+        data = _try_cache(page_name)
+        if data:
+            return data
+
+    # 4) Last resort: Wayback snapshots
+    for page_name in page_names:
+        candidate = page_name.replace(" ", "_")
+        data = _try_wayback(page_name, candidate)
+        if data:
+            return data
+
+    return None
 
 
 def parse_wiki_table(html):
@@ -112,45 +491,42 @@ def parse_wiki_table(html):
     if stat_table is None:
         return None if not form else {"form": form}
 
-    def val(row, col):
-        rows = stat_table.find_all("tr")
-        if row >= len(rows):
-            return None
-        tds = rows[row].find_all("td")
-        if col >= len(tds):
-            return None
-        txt = tds[col].get_text(strip=True)
-        return txt
-
     level_cap = 140
     m = re.search(r"level (\d+)", html)
     if m:
         level_cap = int(m.group(1))
 
     result = {"form": form, "level_cap": level_cap}
-    rows_map = [("hp", 1), ("ds", 2), ("at", 3), ("ct", 5), ("ht", 8), ("de", 7)]
-    for key, r in rows_map:
-        result[key] = val(r, 2)
-        result[f"{key}_growth"] = val(r, 3)
+    for tr in stat_table.find_all("tr"):
+        cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+        if len(cells) < 3:
+            continue
+        label = cells[1].strip().lower() if len(cells) > 1 else ""
+        key = WIKI_ROW_MAP.get(label)
+        if not key:
+            continue
+        result[key] = cells[2].strip() if len(cells) > 2 else None
+        result[f"{key}_base"] = cells[3].strip() if len(cells) > 3 else None
+
+    # Raw rows for debug
+    raw_rows = []
+    for tr in stat_table.find_all("tr"):
+        cells = tr.find_all(["td", "th"])
+        if cells:
+            raw_rows.append([c.get_text(strip=True) for c in cells])
+    result["_raw_rows"] = raw_rows
+    result["_table_html"] = str(stat_table)
 
     return result
 
 
-def search_digimon(name):
-    clean = name.strip()
-    parts = clean.replace(" ", "_").split("_")
-    for i in range(len(parts), 0, -1):
-        candidate = "_".join(parts[:i])
-        url = f"{WAYBACK}/{candidate}"
-        try:
-            resp = requests.get(url, timeout=15)
-        except requests.RequestException:
-            continue
-        if resp.status_code == 200:
-            data = parse_wiki_table(resp.text)
-            if data and data.get("hp"):
-                return data
-    return None
+def _save_debug_html(label, html):
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"_wiki_{label}.html")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
+    except Exception:
+        pass
 
 
 DIGIMON_NAMES = []
@@ -159,16 +535,21 @@ if getattr(sys, 'frozen', False):
 else:
     _base = os.path.dirname(os.path.abspath(__file__))
 _list_path = os.path.join(_base, "digimon_list.json")
-_save_list_path = os.path.join(
-    os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else _base,
-    "digimon_list.json"
-)
+_save_list_path = os.path.join(_get_cache_dir(), "digimon_list.json")
 if os.path.exists(_list_path):
     try:
         with open(_list_path, encoding="utf-8") as _f:
             DIGIMON_NAMES = json.load(_f).get("digimon", [])
     except Exception:
         pass
+
+try:
+    if os.path.exists(_save_list_path):
+        with open(_save_list_path, encoding="utf-8") as _f:
+            DIGIMON_NAMES = json.load(_f).get("digimon", [])
+except Exception:
+    pass
+
 if not DIGIMON_NAMES:
     DIGIMON_NAMES = [
         "Agumon", "Gabumon", "Patamon", "Guilmon", "Renamon", "Veemon", "Dorumon",
@@ -196,70 +577,47 @@ if not DIGIMON_NAMES:
 
 
 class CalculadoraDMO:
-    SIZE_DEFAULT = 1.4
-    BG = "#f0f2f5"
-    CARD_BG = "#ffffff"
-    ACCENT = "#2b6ef0"
-    SUCCESS = "#27ae60"
-    LABEL_FG = "#1a1a2e"
-    SUB_FG = "#555555"
+    SIZE_DEFAULT = WIKI_SIZE
+    COMPARE_CARD_WIDTH = 320
+    COMPARE_CARD_HEIGHT = 300
 
     LIGHT_THEME = {
-        "BG": "#f0f2f5",
-        "CARD_BG": "#ffffff",
-        "ACCENT": "#2b6ef0",
-        "SUCCESS": "#27ae60",
-        "LABEL_FG": "#1a1a2e",
-        "SUB_FG": "#555555",
+        "BG": "#edf2f7", "CARD_BG": "#ffffff", "PANEL_BG": "#f7fafc",
+        "ACCENT": "#1d4ed8", "ACCENT_SOFT": "#dbeafe", "SUCCESS": "#15803d",
+        "LABEL_FG": "#0f172a", "SUB_FG": "#475569", "BORDER": "#cbd5e1",
+        "INPUT_BG": "#f8fafc", "INPUT_FG": "#0f172a",
     }
     DARK_THEME = {
-        "BG": "#1e1e2e",
-        "CARD_BG": "#2d2d44",
-        "ACCENT": "#6fa8ff",
-        "SUCCESS": "#4caf50",
-        "LABEL_FG": "#e0e0e0",
-        "SUB_FG": "#aaaaaa",
+        "BG": "#111827", "CARD_BG": "#1f2937", "PANEL_BG": "#0f172a",
+        "ACCENT": "#60a5fa", "ACCENT_SOFT": "#1e3a8a", "SUCCESS": "#22c55e",
+        "LABEL_FG": "#e5eefb", "SUB_FG": "#94a3b8", "BORDER": "#334155",
+        "INPUT_BG": "#0f172a", "INPUT_FG": "#e5eefb",
     }
 
     def __init__(self, root):
         root.title("Digimon Master Online - Calculadora Final")
         root.resizable(False, False)
-        root.configure(bg=self.BG)
         self.dark_mode = False
-
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure("TLabel", background=self.BG, foreground=self.LABEL_FG, font=("Segoe UI", 10))
-        style.configure("TButton", font=("Segoe UI", 10, "bold"))
-        style.configure("CardTitle.TLabel", background=self.CARD_BG, foreground=self.ACCENT,
-                        font=("Segoe UI", 11, "bold"))
-        style.configure("Header.TLabel", background=self.BG, foreground=self.ACCENT,
-                        font=("Segoe UI", 14, "bold"))
-        style.configure("Sub.TLabel", background=self.BG, foreground=self.SUB_FG, font=("Segoe UI", 9))
-        style.configure("Cell.TLabel", background=self.CARD_BG, foreground=self.LABEL_FG,
-                        font=("Segoe UI", 10), anchor="center")
-        style.configure("Result.TLabel", background=self.CARD_BG, foreground=self.SUCCESS,
-                        font=("Segoe UI", 10, "bold"), anchor="center")
-        style.configure("Total.TLabel", background=self.BG, foreground=self.LABEL_FG,
-                        font=("Segoe UI", 12, "bold"))
-        style.configure("BoldHeader.TLabel", background=self.CARD_BG, foreground=self.LABEL_FG,
-                        font=("Segoe UI", 10, "bold"), anchor="center")
+        self.theme = dict(self.LIGHT_THEME)
+        self.root = root
+        self._ui_queue = queue.Queue()
+        self._apply_styles()
+        self.root.after(50, self._drain_ui_queue)
 
         notebook = ttk.Notebook(root)
         notebook.pack(fill="both", expand=True)
         self.notebook = notebook
-
         tab1 = ttk.Frame(notebook, padding="8")
         tab2 = ttk.Frame(notebook, padding="8")
+        tab3 = ttk.Frame(notebook, padding="8")
         notebook.add(tab1, text="Calculadora")
         notebook.add(tab2, text="Calculadora Reversa")
+        notebook.add(tab3, text="Comparação")
 
-        # Tab 1: scrollable main calculator
-        canvas = tk.Canvas(tab1, highlightthickness=0, bg=self.BG)
+        canvas = tk.Canvas(tab1, highlightthickness=0, bg=self.theme["BG"])
         self.canvas = canvas
         scrollbar = ttk.Scrollbar(tab1, orient="vertical", command=canvas.yview)
         canvas.configure(yscrollcommand=scrollbar.set)
-
         scrollbar.pack(side="right", fill="y")
         canvas.pack(side="left", fill="both", expand=True)
 
@@ -276,15 +634,72 @@ class CalculadoraDMO:
         canvas.bind_all("<MouseWheel>", on_mousewheel)
 
         self.build_main_ui(main)
-
-        # Tab 2: reverse calculator (no scroll needed)
         self.build_rev_ui(tab2)
+        self.build_compare_ui(tab3)
 
         root.update_idletasks()
         cw = main.winfo_reqwidth() + 50
         ch = min(main.winfo_reqheight() + 50, root.winfo_screenheight() - 80)
         scrw = scrollbar.winfo_width() or 20
         root.geometry(f"{int(cw + scrw)}x{int(ch)}")
+
+    def _drain_ui_queue(self):
+        try:
+            while True:
+                callback = self._ui_queue.get_nowait()
+                callback()
+        except queue.Empty:
+            pass
+        self.root.after(50, self._drain_ui_queue)
+
+    def _apply_styles(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        t = self.theme
+        style.configure("TFrame", background=t["BG"])
+        style.configure("TLabel", background=t["BG"], foreground=t["LABEL_FG"], font=("Segoe UI", 10))
+        style.configure("TButton", font=("Segoe UI", 10, "bold"),
+                        background=t["ACCENT"], foreground="white", borderwidth=0, padding=(12, 7))
+        style.map("TButton",
+                  background=[("active", t["ACCENT"]), ("pressed", t["ACCENT"])],
+                  foreground=[("active", "white"), ("pressed", "white")])
+        style.configure("CardTitle.TLabel", background=t["CARD_BG"], foreground=t["ACCENT"],
+                        font=("Segoe UI Semibold", 11, "bold"))
+        style.configure("Header.TLabel", background=t["BG"], foreground=t["ACCENT"],
+                        font=("Segoe UI Semibold", 15, "bold"))
+        style.configure("Hero.TLabel", background=t["BG"], foreground=t["LABEL_FG"],
+                        font=("Segoe UI Semibold", 20, "bold"))
+        style.configure("Sub.TLabel", background=t["BG"], foreground=t["SUB_FG"], font=("Segoe UI", 9))
+        style.configure("CardSub.TLabel", background=t["CARD_BG"], foreground=t["SUB_FG"], font=("Segoe UI", 9))
+        style.configure("Cell.TLabel", background=t["CARD_BG"], foreground=t["LABEL_FG"],
+                        font=("Segoe UI", 10), anchor="center")
+        style.configure("Result.TLabel", background=t["CARD_BG"], foreground=t["SUCCESS"],
+                        font=("Segoe UI", 10, "bold"), anchor="center")
+        style.configure("Total.TLabel", background=t["BG"], foreground=t["LABEL_FG"],
+                        font=("Segoe UI Semibold", 12, "bold"))
+        style.configure("BoldHeader.TLabel", background=t["CARD_BG"], foreground=t["LABEL_FG"],
+                        font=("Segoe UI Semibold", 10, "bold"), anchor="center")
+        style.configure("TNotebook", background=t["BG"], borderwidth=0, tabmargins=(0, 0, 0, 8))
+        style.configure("TNotebook.Tab", background=t["PANEL_BG"], foreground=t["SUB_FG"],
+                        padding=[16, 8], font=("Segoe UI Semibold", 10))
+        style.map("TNotebook.Tab",
+                  background=[("selected", t["CARD_BG"]), ("active", t["ACCENT_SOFT"])],
+                  foreground=[("selected", t["ACCENT"]), ("active", t["LABEL_FG"])])
+        style.configure("TEntry", fieldbackground=t["INPUT_BG"], foreground=t["INPUT_FG"],
+                        bordercolor=t["BORDER"], lightcolor=t["BORDER"], darkcolor=t["BORDER"],
+                        insertcolor=t["INPUT_FG"], padding=6)
+        style.configure("TCombobox", fieldbackground=t["INPUT_BG"], foreground=t["INPUT_FG"],
+                        bordercolor=t["BORDER"], lightcolor=t["BORDER"], darkcolor=t["BORDER"],
+                        arrowsize=14, padding=5)
+        style.map("TCombobox",
+                  fieldbackground=[("readonly", t["INPUT_BG"])],
+                  foreground=[("readonly", t["INPUT_FG"])])
+        style.configure("TRadiobutton", background=t["CARD_BG"], foreground=t["LABEL_FG"],
+                        font=("Segoe UI", 9))
+        style.configure("TCheckbutton", background=t["CARD_BG"], foreground=t["LABEL_FG"],
+                        font=("Segoe UI", 9))
+        style.configure("TProgressbar", troughcolor=t["ACCENT_SOFT"], background=t["ACCENT"], borderwidth=0)
+        self.root.configure(bg=t["BG"])
 
     def try_float(self, val):
         val = val.strip().replace(",", ".")
@@ -293,58 +708,47 @@ class CalculadoraDMO:
         return float(val)
 
     def _make_card(self, parent, title, row):
-        card = tk.Frame(parent, bg=self.CARD_BG, bd=0, highlightthickness=0,
-                        padx=14, pady=10)
+        t = self.theme
+        card = tk.Frame(parent, bg=t["CARD_BG"], bd=0, highlightthickness=1,
+                        highlightbackground=t["BORDER"], highlightcolor=t["BORDER"],
+                        padx=16, pady=12)
         card.grid(row=row, column=0, columnspan=6, sticky="ew", pady=(0, 8))
-        tk.Frame(card, bg=self.ACCENT, height=2).pack(fill="x", pady=(0, 6))
-        ttk.Label(card, text=title, style="CardTitle.TLabel").pack(anchor="w")
+        tk.Frame(card, bg=t["ACCENT"], height=3).pack(fill="x", pady=(0, 8))
+        title_row = tk.Frame(card, bg=t["CARD_BG"])
+        title_row.pack(fill="x")
+        ttk.Label(title_row, text=title, style="CardTitle.TLabel").pack(anchor="w", side="left")
         card._is_card = True
         return card
 
+    def _add_card_hint(self, parent, text):
+        ttk.Label(parent, text=text, style="CardSub.TLabel", wraplength=780, justify="left").pack(anchor="w", pady=(2, 8))
+
     def toggle_theme(self):
         self.dark_mode = not self.dark_mode
-        theme = self.DARK_THEME if self.dark_mode else self.LIGHT_THEME
-        self.BG = theme["BG"]
-        self.CARD_BG = theme["CARD_BG"]
-        self.ACCENT = theme["ACCENT"]
-        self.SUCCESS = theme["SUCCESS"]
-        self.LABEL_FG = theme["LABEL_FG"]
-        self.SUB_FG = theme["SUB_FG"]
-
-        style = ttk.Style()
-        style.configure("TLabel", background=self.BG, foreground=self.LABEL_FG)
-        style.configure("CardTitle.TLabel", background=self.CARD_BG, foreground=self.ACCENT)
-        style.configure("Header.TLabel", background=self.BG, foreground=self.ACCENT)
-        style.configure("Sub.TLabel", background=self.BG, foreground=self.SUB_FG)
-        style.configure("Cell.TLabel", background=self.CARD_BG, foreground=self.LABEL_FG)
-        style.configure("Result.TLabel", background=self.CARD_BG, foreground=self.SUCCESS)
-        style.configure("Total.TLabel", background=self.BG, foreground=self.LABEL_FG)
-        style.configure("BoldHeader.TLabel", background=self.CARD_BG, foreground=self.LABEL_FG)
-        bg2 = theme["BG"]
-        fg2 = theme["LABEL_FG"]
-        style.configure("TNotebook", background=bg2, borderwidth=0)
-        style.configure("TNotebook.Tab", background=bg2, foreground=fg2,
-                        padding=[10, 4], font=("Segoe UI", 10))
-        style.map("TNotebook.Tab",
-                  background=[("selected", theme["CARD_BG"]), ("active", theme["ACCENT"])],
-                  foreground=[("selected", theme["ACCENT"]), ("active", "white")])
-
+        self.theme = dict(self.DARK_THEME if self.dark_mode else self.LIGHT_THEME)
+        self._apply_styles()
         self._apply_theme(self.root)
         self.theme_btn.config(text="Modo Claro" if self.dark_mode else "Modo Escuro")
 
     def _apply_theme(self, widget):
+        t = self.theme
         for child in widget.winfo_children():
             if isinstance(child, tk.Frame):
                 is_card = getattr(child, "_is_card", False)
-                child.configure(bg=self.CARD_BG if is_card else self.BG)
+                child.configure(bg=t["CARD_BG"] if is_card else t["BG"],
+                                highlightbackground=t["BORDER"], highlightcolor=t["BORDER"])
             elif isinstance(child, tk.Canvas):
-                child.configure(bg=self.BG)
+                child.configure(bg=t["BG"])
             elif isinstance(child, tk.Button):
-                child.configure(bg=self.ACCENT, fg="white",
-                                activebackground=self.ACCENT, activeforeground="white")
+                child.configure(bg=t["ACCENT"], fg="white",
+                                activebackground=t["ACCENT"], activeforeground="white")
             elif isinstance(child, tk.Listbox):
-                child.configure(bg=self.CARD_BG, fg=self.LABEL_FG,
-                                selectbackground=self.ACCENT, selectforeground="white")
+                child.configure(bg=t["CARD_BG"], fg=t["LABEL_FG"],
+                                selectbackground=t["ACCENT"], selectforeground="white")
+            elif isinstance(child, tk.Text):
+                child.configure(bg=t["INPUT_BG"], fg=t["INPUT_FG"], insertbackground=t["INPUT_FG"])
+            elif isinstance(child, tk.Entry):
+                child.configure(bg=t["INPUT_BG"], fg=t["INPUT_FG"], insertbackground=t["INPUT_FG"])
             self._apply_theme(child)
 
     def build_main_ui(self, parent):
@@ -352,43 +756,69 @@ class CalculadoraDMO:
         r = 0
 
         # ===================== HEADER =====================
-        header_frame = tk.Frame(parent, bg=self.BG)
+        header_frame = tk.Frame(parent, bg=self.theme["BG"])
         header_frame.grid(row=r, column=0, columnspan=6, sticky="ew", pady=(0, 8))
-        ttk.Label(header_frame, text="Calculadora de Stats", style="Header.TLabel").pack(anchor="w")
-        ttk.Label(header_frame, text="Digimon Master Online", style="Sub.TLabel").pack(anchor="w")
+        ttk.Label(header_frame, text="Digimon Stats Studio", style="Hero.TLabel").pack(anchor="w")
+        ttk.Label(header_frame, text="Busca dados na Wiki, calcula stats finais e compara Digimons lado a lado.",
+                  style="Sub.TLabel").pack(anchor="w", pady=(2, 0))
+        ttk.Label(header_frame, text="Atalhos: Enter busca | Ctrl+Enter calcula | +HTML abre importacao manual.",
+                  style="Sub.TLabel").pack(anchor="w", pady=(2, 0))
         self.theme_btn = tk.Button(header_frame, text="Modo Escuro",
-            command=self.toggle_theme, bg=self.ACCENT, fg="white",
+            command=self.toggle_theme, bg=self.theme["ACCENT"], fg="white",
             font=("Segoe UI", 9, "bold"), bd=0, cursor="hand2",
-            padx=10, pady=2, activebackground=self.ACCENT)
+            padx=10, pady=2, activebackground=self.theme["ACCENT"])
         self.theme_btn.pack(side="right", padx=(10, 0))
         r += 1
 
         # ===================== BUSCAR NA WIKI =====================
         card_wiki = self._make_card(parent, "Buscar Digimon na DMO Wiki", r)
+        self._add_card_hint(card_wiki, "Ordem da busca: DMOwiki, HTML manual, cache local e Wayback.")
         r += 1
 
-        wf = tk.Frame(card_wiki, bg=self.CARD_BG)
+        wf = tk.Frame(card_wiki, bg=self.theme["CARD_BG"])
         wf.pack(fill="x")
         ttk.Label(wf, text="Nome:", style="TLabel").pack(side="left", padx=(0, 4))
         self.wiki_name_var = tk.StringVar()
         self.wiki_name_entry = ttk.Entry(wf, textvariable=self.wiki_name_var, width=24)
         self.wiki_name_entry.pack(side="left", padx=(0, 8))
+        self.wiki_name_entry.bind("<Return>", lambda e: self.buscar_wiki())
         self.wiki_btn = ttk.Button(wf, text="Buscar", command=self.buscar_wiki)
         self.wiki_btn.pack(side="left", padx=(0, 8))
+        self.html_btn = ttk.Button(wf, text="+HTML", command=self._open_html_folder, width=7)
+        self.html_btn.pack(side="left", padx=(0, 8))
+        self.wiki_progress = ttk.Progressbar(wf, mode="indeterminate", length=80)
         self.wiki_status = ttk.Label(wf, text="", style="Sub.TLabel")
-        self.wiki_status.pack(side="left")
+        self.wiki_status.pack(side="left", padx=(4, 0))
 
         # Autocomplete frame
-        self.wiki_auto_frame = tk.Frame(card_wiki, bg=self.CARD_BG)
-        self.wiki_auto_listbox = tk.Listbox(self.wiki_auto_frame, height=6,
+        self.wiki_auto_frame = tk.Frame(card_wiki, bg=self.theme["CARD_BG"])
+        auto_row = tk.Frame(self.wiki_auto_frame, bg=self.theme["CARD_BG"])
+        auto_row.pack(fill="x", padx=(40, 0))
+        self.wiki_auto_listbox = tk.Listbox(auto_row, height=6,
             font=("Segoe UI", 10), bd=1, relief="solid",
-            bg=self.CARD_BG, fg=self.LABEL_FG,
-            selectbackground=self.ACCENT, selectforeground="white",
+            bg=self.theme["CARD_BG"], fg=self.theme["LABEL_FG"],
+            selectbackground=self.theme["ACCENT"], selectforeground="white",
             highlightthickness=0)
-        self.wiki_auto_listbox.pack(fill="x", padx=(40, 0))
+        self.wiki_auto_listbox.pack(side="left", fill="x", expand=True)
+        auto_scroll = ttk.Scrollbar(auto_row, orient="vertical", command=self.wiki_auto_listbox.yview)
+        auto_scroll.pack(side="right", fill="y")
+        self.wiki_auto_listbox.configure(yscrollcommand=auto_scroll.set)
         self.wiki_auto_add_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(self.wiki_auto_frame, text="Adicionar ao autocomplete automaticamente",
                         variable=self.wiki_auto_add_var, style="TLabel").pack(anchor="w", padx=(40, 0), pady=(2, 0))
+
+        # Debug: raw wiki table
+        self.wiki_debug_frame = tk.Frame(card_wiki, bg=self.theme["CARD_BG"])
+        ttk.Label(self.wiki_debug_frame, text="Dados brutos do wiki:", style="TLabel").pack(anchor="w", pady=(4, 2))
+        df_row = tk.Frame(self.wiki_debug_frame, bg=self.theme["CARD_BG"])
+        df_row.pack(fill="x")
+        self.wiki_debug_text = tk.Text(df_row, height=8, width=60, font=("Consolas", 9),
+            bg=self.theme["CARD_BG"], fg=self.theme["LABEL_FG"], bd=1, relief="solid", wrap="none")
+        self.wiki_debug_text.pack(side="left", fill="x", expand=True)
+        debug_scroll = ttk.Scrollbar(df_row, orient="vertical", command=self.wiki_debug_text.yview)
+        debug_scroll.pack(side="right", fill="y")
+        self.wiki_debug_text.configure(yscrollcommand=debug_scroll.set)
+        self.wiki_debug_frame.pack_forget()  # hidden until first search
 
         self.wiki_name_var.trace_add("write", self._on_wiki_name_change)
         self.wiki_name_entry.bind("<Down>", lambda e: self.wiki_auto_listbox.focus_set() if self.wiki_auto_frame.winfo_ismapped() else None)
@@ -400,9 +830,10 @@ class CalculadoraDMO:
 
         # ===================== BASE STAT =====================
         card_base = self._make_card(parent, "Base Stat", r)
+        self._add_card_hint(card_base, "Use o modo simples para ajustes rapidos ou o modo por nivel para growth detalhado.")
         r += 1
 
-        method_frame = tk.Frame(card_base, bg=self.CARD_BG)
+        method_frame = tk.Frame(card_base, bg=self.theme["CARD_BG"])
         method_frame.pack(fill="x", pady=(0, 8))
         self.base_method = tk.StringVar(value="simples")
         ttk.Radiobutton(method_frame, text="Simples (Size x Base + Adicional)",
@@ -413,10 +844,10 @@ class CalculadoraDMO:
                         command=self.toggle_base_method).pack(side="left")
 
         # -- Simple --
-        self.simple_frame = tk.Frame(card_base, bg=self.CARD_BG)
+        self.simple_frame = tk.Frame(card_base, bg=self.theme["CARD_BG"])
         self.simple_frame.pack(fill="x")
 
-        top_row = tk.Frame(self.simple_frame, bg=self.CARD_BG)
+        top_row = tk.Frame(self.simple_frame, bg=self.theme["CARD_BG"])
         top_row.pack(fill="x", pady=(0, 6))
         ttk.Label(top_row, text="Size:", style="TLabel").pack(side="left", padx=(0, 4))
         self.s_size_var = tk.StringVar(value=str(self.SIZE_DEFAULT))
@@ -426,7 +857,7 @@ class CalculadoraDMO:
         self.s_nome_var = tk.StringVar()
         ttk.Entry(top_row, textvariable=self.s_nome_var, width=20).pack(side="left")
 
-        tbl = tk.Frame(self.simple_frame, bg=self.CARD_BG)
+        tbl = tk.Frame(self.simple_frame, bg=self.theme["CARD_BG"])
         tbl.pack(fill="x")
         for ci, c in enumerate(["Stat", "Base", "Adicional"]):
             ttk.Label(tbl, text=c, style="BoldHeader.TLabel", width=14).grid(row=0, column=ci, padx=4, pady=2)
@@ -444,10 +875,10 @@ class CalculadoraDMO:
             self.s_adic_vars[sk] = av
 
         # -- Nivel --
-        self.nivel_frame = tk.Frame(card_base, bg=self.CARD_BG)
+        self.nivel_frame = tk.Frame(card_base, bg=self.theme["CARD_BG"])
         self.nivel_frame.pack(fill="x")
 
-        top_row_n = tk.Frame(self.nivel_frame, bg=self.CARD_BG)
+        top_row_n = tk.Frame(self.nivel_frame, bg=self.theme["CARD_BG"])
         top_row_n.pack(fill="x", pady=(0, 6))
         ttk.Label(top_row_n, text="Level:", style="TLabel").pack(side="left", padx=(0, 4))
         self.n_lvl_var = tk.StringVar(value="140")
@@ -465,7 +896,7 @@ class CalculadoraDMO:
         self.n_size_var = tk.StringVar(value=str(self.SIZE_DEFAULT))
         ttk.Entry(top_row_n, textvariable=self.n_size_var, width=8).pack(side="left")
 
-        tbl_n = tk.Frame(self.nivel_frame, bg=self.CARD_BG)
+        tbl_n = tk.Frame(self.nivel_frame, bg=self.theme["CARD_BG"])
         tbl_n.pack(fill="x")
         for ci, c in enumerate(["Stat", "Base Lv1", "Growth/Lv", "Final"]):
             ttk.Label(tbl_n, text=c, style="BoldHeader.TLabel", width=14).grid(row=0, column=ci, padx=4, pady=2)
@@ -498,9 +929,10 @@ class CalculadoraDMO:
 
         # ===================== CLONE =====================
         card_clone = self._make_card(parent, "Clone", r)
+        self._add_card_hint(card_clone, "O resumo mostra os multiplicadores aplicados ao nivel de clone selecionado.")
         r += 1
 
-        cf = tk.Frame(card_clone, bg=self.CARD_BG)
+        cf = tk.Frame(card_clone, bg=self.theme["CARD_BG"])
         cf.pack(fill="x")
         ttk.Label(cf, text="Nivel do Clone:", style="TLabel").pack(side="left", padx=(0, 6))
         self.clone_lv_var = tk.StringVar()
@@ -525,9 +957,10 @@ class CalculadoraDMO:
 
         # ===================== FLAT BONUSES =====================
         card_flat = self._make_card(parent, "Flat Bonuses (adicionados apos clone)", r)
+        self._add_card_hint(card_flat, "Preencha somente os bonuses fixos que entram depois do clone.")
         r += 1
 
-        hdr = tk.Frame(card_flat, bg=self.CARD_BG)
+        hdr = tk.Frame(card_flat, bg=self.theme["CARD_BG"])
         hdr.pack(fill="x", pady=(0, 2))
         ttk.Label(hdr, text="Fonte", style="BoldHeader.TLabel", width=14).grid(row=0, column=0, padx=2)
         for si, sl in enumerate(STAT_LABELS):
@@ -536,7 +969,7 @@ class CalculadoraDMO:
 
         self.flat_vars = {}
         for cat in FLAT_CATEGORIES:
-            row_f = tk.Frame(card_flat, bg=self.CARD_BG)
+            row_f = tk.Frame(card_flat, bg=self.theme["CARD_BG"])
             row_f.pack(fill="x", pady=1)
             ttk.Label(row_f, text=cat, style="TLabel", width=14).grid(row=0, column=0, padx=2)
             cat_vars = {}
@@ -547,19 +980,21 @@ class CalculadoraDMO:
             self.flat_vars[cat] = cat_vars
 
         # ===================== CALCULATE =====================
-        btn_frame = tk.Frame(parent, bg=self.BG)
+        btn_frame = tk.Frame(parent, bg=self.theme["BG"])
         btn_frame.grid(row=r, column=0, columnspan=6, pady=(4, 8))
         tk.Button(btn_frame, text="Calcular", command=self.calcular,
-                  bg=self.ACCENT, fg="white", font=("Segoe UI", 11, "bold"),
+                  bg=self.theme["ACCENT"], fg="white", font=("Segoe UI", 11, "bold"),
                   padx=32, pady=6, bd=0, cursor="hand2",
-                  activebackground=self.ACCENT).pack()
+                  activebackground=self.theme["ACCENT"]).pack()
+        self.root.bind("<Control-Return>", lambda e: self.calcular())
         r += 1
 
         # ===================== RESULTS =====================
         card_res = self._make_card(parent, "Resultado Final", r)
+        self._add_card_hint(card_res, "Painel consolidado com base, ganho por level, clone, flat e total final.")
         r += 1
 
-        res_tbl = tk.Frame(card_res, bg=self.CARD_BG)
+        res_tbl = tk.Frame(card_res, bg=self.theme["CARD_BG"])
         res_tbl.pack(fill="x", pady=(4, 0))
         cols_res = ["Stat", "Base (c/ Adicional)", "+/Lv", "Clone (x)", "Clone (+)", "Flat", "Total"]
         widths = [10, 14, 8, 8, 10, 10, 14]
@@ -582,16 +1017,30 @@ class CalculadoraDMO:
 
         self.total_line = ttk.Label(parent, text="", style="Total.TLabel")
         self.total_line.grid(row=r, column=0, columnspan=6, sticky="w", pady=(4, 0))
+
+        self.copy_btn = tk.Button(parent, text="Copiar Resultados",
+            command=self._copy_results, bg=self.theme["ACCENT"], fg="white",
+            font=("Segoe UI", 9), bd=0, cursor="hand2",
+            padx=10, pady=2, activebackground=self.theme["ACCENT"])
+        self.copy_btn.grid(row=r, column=5, sticky="e", padx=(0, 4))
         r += 1
+
+    def _copy_results(self):
+        text = self.total_line.cget("text")
+        if text:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(text)
+            self.wiki_status.config(text="Copiado!")
 
     def build_rev_ui(self, parent):
         r = 0
 
         card_rev = self._make_card(parent, "Calculadora Reversa / Verificador", r)
+        self._add_card_hint(card_rev, "Use 2 pontos conhecidos para descobrir growth ou 1 ponto + base para validar dados.")
         r += 1
 
         # Mode
-        mf = tk.Frame(card_rev, bg=self.CARD_BG)
+        mf = tk.Frame(card_rev, bg=self.theme["CARD_BG"])
         mf.pack(fill="x", pady=(0, 6))
         self.rev_mode = tk.StringVar(value="2p")
         ttk.Radiobutton(mf, text="Descobridor (2 pontos)",
@@ -601,12 +1050,12 @@ class CalculadoraDMO:
                         variable=self.rev_mode, value="1p",
                         command=self._toggle_reverso_mode).pack(side="left")
 
-        rf1 = tk.Frame(card_rev, bg=self.CARD_BG)
+        rf1 = tk.Frame(card_rev, bg=self.theme["CARD_BG"])
         rf1.pack(fill="x", pady=2)
         ttk.Label(rf1, text="Stat:", style="TLabel").pack(side="left", padx=(0, 4))
         self.rev_stat = tk.StringVar(value="AT")
         ttk.Combobox(rf1, textvariable=self.rev_stat,
-                     values=["HP", "DS", "AT", "CT (%)", "HT (%)", "DE"],
+                     values=["HP", "DS", "AT", "CT (%)", "HT", "DE"],
                      width=10, state="readonly").pack(side="left", padx=(0, 16))
         ttk.Label(rf1, text="Evo:", style="TLabel").pack(side="left", padx=(0, 4))
         self.rev_evo = tk.StringVar()
@@ -617,7 +1066,7 @@ class CalculadoraDMO:
         rev_evo_cmb.current(3)
 
         # Ponto 1
-        p1f = tk.Frame(card_rev, bg=self.CARD_BG)
+        p1f = tk.Frame(card_rev, bg=self.theme["CARD_BG"])
         p1f.pack(fill="x", pady=2)
         ttk.Label(p1f, text="Ponto 1:", style="TLabel").pack(side="left", padx=(0, 4))
         ttk.Label(p1f, text="Size", style="Sub.TLabel").pack(side="left", padx=(0, 2))
@@ -631,7 +1080,7 @@ class CalculadoraDMO:
         ttk.Entry(p1f, textvariable=self.rev_t1, width=10).pack(side="left")
 
         # Ponto 2 (mode Descobridor)
-        self.rev_p2_frame = tk.Frame(card_rev, bg=self.CARD_BG)
+        self.rev_p2_frame = tk.Frame(card_rev, bg=self.theme["CARD_BG"])
         self.rev_p2_frame.pack(fill="x", pady=2)
         ttk.Label(self.rev_p2_frame, text="Ponto 2:", style="TLabel").pack(side="left", padx=(0, 4))
         ttk.Label(self.rev_p2_frame, text="Size", style="Sub.TLabel").pack(side="left", padx=(0, 2))
@@ -645,22 +1094,253 @@ class CalculadoraDMO:
         ttk.Entry(self.rev_p2_frame, textvariable=self.rev_t2, width=10).pack(side="left")
 
         # Base Lv1 (mode Verificador)
-        self.rev_base_frame = tk.Frame(card_rev, bg=self.CARD_BG)
+        self.rev_base_frame = tk.Frame(card_rev, bg=self.theme["CARD_BG"])
         ttk.Label(self.rev_base_frame, text="Base Lv1 (Size 1.0):", style="TLabel").pack(side="left", padx=(0, 4))
         self.rev_base = tk.StringVar()
         ttk.Entry(self.rev_base_frame, textvariable=self.rev_base, width=10).pack(side="left")
 
         # Button
-        btf = tk.Frame(card_rev, bg=self.CARD_BG)
+        btf = tk.Frame(card_rev, bg=self.theme["CARD_BG"])
         btf.pack(fill="x", pady=(6, 2))
         tk.Button(btf, text="Calcular Reverso", command=self._calcular_reverso,
-                  bg=self.ACCENT, fg="white", font=("Segoe UI", 10, "bold"),
+                  bg=self.theme["ACCENT"], fg="white", font=("Segoe UI", 10, "bold"),
                   padx=20, pady=4, bd=0, cursor="hand2",
-                  activebackground=self.ACCENT).pack(side="left", padx=(0, 12))
+                  activebackground=self.theme["ACCENT"]).pack(side="left", padx=(0, 12))
         self.rev_result = ttk.Label(btf, text="", style="Sub.TLabel")
         self.rev_result.pack(side="left")
 
         self._toggle_reverso_mode()
+
+    # ===================== COMPARAÇÃO =====================
+    def build_compare_ui(self, parent):
+        self.compare_cards = []
+
+        # Canvas for vertical scrolling
+        self.compare_canvas = tk.Canvas(parent, bg=self.theme["BG"], highlightthickness=0)
+        self.compare_vscroll = ttk.Scrollbar(parent, orient="vertical", command=self.compare_canvas.yview)
+        self.compare_canvas.configure(yscrollcommand=self.compare_vscroll.set)
+
+        self.compare_vscroll.pack(side="right", fill="y")
+        self.compare_canvas.pack(side="left", fill="both", expand=True)
+
+        # Inner frame
+        self.compare_container = tk.Frame(self.compare_canvas, bg=self.theme["BG"])
+        self.compare_canvas.create_window((0, 0), window=self.compare_container, anchor="nw")
+        self.compare_container.bind("<Configure>", self._on_compare_configure)
+        self.compare_container.grid_columnconfigure(0, minsize=self.COMPARE_CARD_WIDTH, weight=1)
+        self.compare_container.grid_columnconfigure(1, minsize=self.COMPARE_CARD_WIDTH, weight=1)
+
+        # Top bar with Add button
+        top = tk.Frame(parent, bg=self.theme["BG"])
+        top.pack(fill="x", pady=(0, 8), before=self.compare_canvas)
+        ttk.Label(top, text="Comparação de Digimons", style="Header.TLabel").pack(side="left")
+        ttk.Label(top, text="Dois cards por linha, busca direta e status de origem por card.",
+                  style="Sub.TLabel").pack(side="left", padx=(12, 0))
+        self.compare_add_btn = tk.Button(top, text="+", command=self._add_comparison_card,
+                                         bg=self.theme["ACCENT"], fg="white",
+                                         font=("Segoe UI", 14, "bold"),
+                                         padx=12, pady=2, bd=0, cursor="hand2",
+                                         activebackground=self.theme["ACCENT"])
+        self.compare_add_btn.pack(side="right", padx=(8, 0))
+
+        # Add first two cards
+        self._add_comparison_card()
+        self._add_comparison_card()
+
+    def _on_compare_configure(self, _=None):
+        self.compare_canvas.configure(scrollregion=self.compare_canvas.bbox("all"))
+
+    def _add_comparison_card(self, digimon_name=None):
+        t = self.theme
+        card_frame = tk.Frame(self.compare_container, bg=t["CARD_BG"], bd=1, relief="solid",
+                              padx=12, pady=10, highlightbackground=t["SUB_FG"], highlightthickness=1,
+                              width=self.COMPARE_CARD_WIDTH, height=self.COMPARE_CARD_HEIGHT)
+        card_frame.grid_propagate(False)
+
+        # Close button
+        def _remove():
+            self._remove_comparison_card(card_frame)
+        tk.Button(card_frame, text="✕", command=_remove,
+                  bg=t["CARD_BG"], fg=t["SUB_FG"], bd=0, cursor="hand2",
+                  font=("Segoe UI", 10, "bold"),
+                  activebackground=t["ACCENT"], activeforeground="white").pack(anchor="ne")
+
+        # ComboBox / Entry
+        var = tk.StringVar(value=digimon_name or "")
+        entry_row = tk.Frame(card_frame, bg=t["CARD_BG"])
+        entry_row.pack(fill="x", pady=(4, 0))
+        entry = ttk.Entry(entry_row, textvariable=var, width=18, font=("Segoe UI", 10))
+        entry.pack(side="left", fill="x", expand=True)
+
+        # Autocomplete listbox (hidden by default)
+        auto_frame = tk.Frame(card_frame, bg=t["CARD_BG"])
+        auto_list = tk.Listbox(auto_frame, height=5,
+            font=("Segoe UI", 10), bd=1, relief="solid",
+            bg=t["CARD_BG"], fg=t["LABEL_FG"],
+            selectbackground=t["ACCENT"], selectforeground="white",
+            highlightthickness=0, width=24)
+        auto_list.pack(side="left", fill="x", expand=True)
+        auto_scroll = ttk.Scrollbar(auto_frame, orient="vertical", command=auto_list.yview)
+        auto_scroll.pack(side="right", fill="y")
+        auto_list.configure(yscrollcommand=auto_scroll.set)
+
+        # Info labels
+        form_var = tk.StringVar()
+        lv_var = tk.StringVar()
+        status_var = tk.StringVar()
+        info = tk.Frame(card_frame, bg=t["CARD_BG"])
+        info.pack(fill="x", pady=4)
+        ttk.Label(info, textvariable=status_var, style="Sub.TLabel").pack(anchor="w")
+        ttk.Label(info, textvariable=form_var, style="Sub.TLabel").pack(anchor="w")
+        ttk.Label(info, textvariable=lv_var, style="Sub.TLabel").pack(anchor="w")
+
+        # Stats table header
+        sh = tk.Frame(card_frame, bg=t["CARD_BG"])
+        sh.pack(fill="x", pady=(6, 2))
+        ttk.Label(sh, text="Stat", width=5, style="BoldHeader.TLabel").pack(side="left")
+        ttk.Label(sh, text="Final", width=8, style="BoldHeader.TLabel").pack(side="left")
+        ttk.Label(sh, text="Base", width=8, style="BoldHeader.TLabel").pack(side="left")
+
+        # Stat rows
+        stat_widgets = {}
+        for sk, sl in zip(["hp", "ds", "at", "ct", "ht", "de"],
+                          ["HP", "DS", "AT", "CT(%)", "HT", "DE"]):
+            row = tk.Frame(card_frame, bg=t["CARD_BG"])
+            row.pack(fill="x")
+            ttk.Label(row, text=sl, width=5, style="Cell.TLabel").pack(side="left")
+            fv = tk.StringVar()
+            bv = tk.StringVar()
+            ttk.Label(row, textvariable=fv, width=8, style="Cell.TLabel").pack(side="left")
+            ttk.Label(row, textvariable=bv, width=8, style="Cell.TLabel").pack(side="left")
+            stat_widgets[sk] = (fv, bv)
+
+        # card_data dict (used by closures below)
+        card_data = {
+            "frame": card_frame,
+            "var": var,
+            "entry": entry,
+            "status_var": status_var,
+            "form_var": form_var,
+            "lv_var": lv_var,
+            "stat_widgets": stat_widgets,
+        }
+
+        def _on_change(*_):
+            typed = var.get().strip()
+            if not typed:
+                auto_frame.pack_forget()
+                return
+            matches = [n for n in DIGIMON_NAMES if typed.lower() in n.lower()]
+            if not matches:
+                auto_frame.pack_forget()
+                return
+            auto_list.delete(0, tk.END)
+            for m in matches[:12]:
+                auto_list.insert(tk.END, m)
+            auto_frame.pack(fill="x")
+            if auto_list.size() > 0:
+                auto_list.selection_clear(0, tk.END)
+                auto_list.activate(0)
+
+        def _submit_search():
+            typed = var.get().strip()
+            auto_frame.pack_forget()
+            if not typed:
+                card_data["status_var"].set("")
+                self._compare_clear_card(card_data)
+                return
+            card_data["status_var"].set("Buscando...")
+            self._compare_search(card_data, typed)
+
+        def _select():
+            sel = auto_list.curselection()
+            if sel:
+                var.set(auto_list.get(sel[0]))
+                entry.icursor(tk.END)
+                entry.xview_moveto(1)
+            elif auto_frame.winfo_ismapped() and auto_list.size() > 0:
+                var.set(auto_list.get(0))
+                entry.icursor(tk.END)
+                entry.xview_moveto(1)
+            _submit_search()
+
+        tk.Button(entry_row, text="Buscar", command=_submit_search,
+                  bg=t["ACCENT"], fg="white", bd=0, cursor="hand2",
+                  font=("Segoe UI", 9, "bold"), padx=8, pady=2,
+                  activebackground=t["ACCENT"], activeforeground="white").pack(side="left", padx=(6, 0))
+
+        var.trace_add("write", _on_change)
+        entry.bind("<Down>", lambda e: auto_list.focus_set() if auto_frame.winfo_ismapped() else None)
+        entry.bind("<FocusOut>", lambda e: card_frame.after(300, auto_frame.pack_forget))
+        entry.bind("<Return>", lambda e: _submit_search())
+        auto_list.bind("<<ListboxSelect>>", lambda e: _select())
+        auto_list.bind("<Return>", lambda e: _select())
+        auto_list.bind("<Escape>", lambda e: auto_frame.pack_forget())
+        auto_list.bind("<FocusOut>", lambda e: auto_frame.pack_forget())
+
+        self.compare_cards.append(card_data)
+        self._reflow_compare_cards()
+
+        # Auto-search if name provided
+        if digimon_name:
+            self._compare_search(card_data, digimon_name)
+
+        return card_data
+
+    def _remove_comparison_card(self, card_frame):
+        for i, cd in enumerate(self.compare_cards):
+            if cd["frame"] == card_frame:
+                cd["frame"].destroy()
+                self.compare_cards.pop(i)
+                break
+        while len(self.compare_cards) < 2:
+            self._add_comparison_card()
+        self._reflow_compare_cards()
+
+    def _reflow_compare_cards(self):
+        for idx, cd in enumerate(self.compare_cards):
+            frame = cd["frame"]
+            row = idx // 2
+            col = idx % 2
+            frame.grid(row=row, column=col, padx=6, pady=4, sticky="nsew")
+
+    def _compare_search(self, card, name):
+        name = name.strip()
+        if not name:
+            self._compare_clear_card(card)
+            return
+
+        def task():
+            data = search_digimon(name)
+            self._ui_queue.put(lambda: self._compare_fill_card(card, data))
+
+        threading.Thread(target=task, daemon=True).start()
+
+    def _compare_clear_card(self, card):
+        card["form_var"].set("")
+        card["lv_var"].set("")
+        for sk in ["hp", "ds", "at", "ct", "ht", "de"]:
+            card["stat_widgets"][sk][0].set("")
+            card["stat_widgets"][sk][1].set("")
+
+    def _compare_fill_card(self, card, data):
+        if not data:
+            card["status_var"].set("Nao encontrado.")
+            self._compare_clear_card(card)
+            return
+
+        form = data.get("form", "")
+        lv = data.get("level_cap", "")
+        source = data.get("_source", "")
+        card["status_var"].set(f"Encontrado ({source})" if source else "Encontrado")
+        card["form_var"].set(f"Form: {form}" if form else "")
+        card["lv_var"].set(f"LvCap: {lv}" if lv else "")
+
+        for sk in ["hp", "ds", "at", "ct", "ht", "de"]:
+            final = data.get(sk, "")
+            base = data.get(f"{sk}_base", "")
+            card["stat_widgets"][sk][0].set(str(final) if final else "-")
+            card["stat_widgets"][sk][1].set(str(base) if base else "-")
 
     def toggle_base_method(self):
         method = self.base_method.get()
@@ -758,8 +1438,9 @@ class CalculadoraDMO:
             self.n_final_vars[sk].set(f"{final:.0f}" if abs(final - round(final)) < 0.0001 else f"{final:.2f}")
 
     def _calcular_reverso(self):
-        sk_map = {"HP": "hp", "DS": "ds", "AT": "at", "CT (%)": "ct", "HT (%)": "ht", "DE": "de"}
+        sk_map = {"HP": "hp", "DS": "ds", "AT": "at", "CT (%)": "ct", "HT": "ht", "DE": "de"}
         stat_key = sk_map[self.rev_stat.get()]
+        is_ds = stat_key == "ds"
         try:
             s1 = self.try_float(self.rev_s1.get())
             l1 = int(self.rev_l1.get().strip())
@@ -792,13 +1473,20 @@ class CalculadoraDMO:
                 self.rev_result.config(text="Ponto 2: Level >= 1, Size > 0.")
                 return
 
-            denom = evo_mult * ((l2 - 1) - s2 / s1 * (l1 - 1))
-            if abs(denom) < 1e-12:
-                self.rev_result.config(text="Os dois pontos sao equivalentes, nao da pra calcular.")
-                return
-
-            growth_lv = (t2 - s2 / s1 * t1) / denom
-            base_lv1 = (t1 - growth_lv * (l1 - 1) * evo_mult) / s1
+            if is_ds:
+                denom = evo_mult * (l2 - l1)
+                if abs(denom) < 1e-12:
+                    self.rev_result.config(text="Os dois pontos tem o mesmo level, nao da pra calcular.")
+                    return
+                growth_lv = (t2 - t1) / denom
+                base_lv1 = t1 - growth_lv * (l1 - 1) * evo_mult
+            else:
+                denom = evo_mult * ((l2 - 1) - s2 / s1 * (l1 - 1))
+                if abs(denom) < 1e-12:
+                    self.rev_result.config(text="Os dois pontos sao equivalentes, nao da pra calcular.")
+                    return
+                growth_lv = (t2 - s2 / s1 * t1) / denom
+                base_lv1 = (t1 - growth_lv * (l1 - 1) * evo_mult) / s1
         else:
             try:
                 bv = self.try_float(self.rev_base.get())
@@ -806,13 +1494,20 @@ class CalculadoraDMO:
                 self.rev_result.config(text="Base Lv1 invalida.")
                 return
 
-            denom = evo_mult * (l1 - 1)
-            if denom < 1e-12:
-                self.rev_result.config(text="Level 1 nao da pra calcular Growth (Level > 1 necessario).")
-                return
-
-            growth_lv = (t1 - s1 * bv) / denom
-            base_lv1 = bv
+            if is_ds:
+                denom = evo_mult * (l1 - 1)
+                if denom < 1e-12:
+                    self.rev_result.config(text="Level 1 nao da pra calcular Growth (Level > 1 necessario).")
+                    return
+                growth_lv = (t1 - bv) / denom
+                base_lv1 = bv
+            else:
+                denom = evo_mult * (l1 - 1)
+                if denom < 1e-12:
+                    self.rev_result.config(text="Level 1 nao da pra calcular Growth (Level > 1 necessario).")
+                    return
+                growth_lv = (t1 - s1 * bv) / denom
+                base_lv1 = bv
 
         def fmt(v):
             if abs(v - round(v)) < 0.001:
@@ -823,6 +1518,12 @@ class CalculadoraDMO:
             text=f"Base Lv1 (Size 1.0): {fmt(base_lv1)}  |  Growth/Lv: {fmt(growth_lv)}"
         )
 
+    def _open_html_folder(self):
+        global _MANUAL_HTML_NAMES
+        _MANUAL_HTML_NAMES = None
+        os.makedirs(MANUAL_HTML_DIR, exist_ok=True)
+        os.startfile(MANUAL_HTML_DIR)
+
     def buscar_wiki(self):
         name = self.wiki_name_var.get().strip()
         if not name:
@@ -830,33 +1531,48 @@ class CalculadoraDMO:
             return
         self.wiki_btn.config(state="disabled")
         self.wiki_status.config(text="Buscando...")
+        self.wiki_progress.pack(side="left", padx=(4, 0))
+        self.wiki_progress.start()
 
         def task():
             data = search_digimon(name)
-            root = self.wiki_btn.winfo_toplevel()
-            root.after(0, lambda: self._wiki_result(data))
+            self._ui_queue.put(lambda: self._wiki_result(data))
 
         threading.Thread(target=task, daemon=True).start()
 
     def _wiki_result(self, data):
         self.wiki_btn.config(state="normal")
+        self.wiki_progress.stop()
+        self.wiki_progress.pack_forget()
         name = self.wiki_name_var.get().strip()
         if name:
             self._add_to_autocomplete(name)
         if data is None:
-            self.wiki_status.config(text="Nao encontrado ou erro na requisicao.")
+            self.wiki_status.config(text="Nao encontrado. Salve o HTML em manual_html/ e tente de novo.")
+            self.wiki_debug_frame.pack_forget()
             return
-        self.wiki_status.config(text="OK! Preenchido.")
+        self.wiki_status.config(text=f"OK! ({data.get('_source', '?')})")
 
+        # Fill Simples → valor final (col 2), Nivel → base Lv1 (col 3)
         for sk in STAT_KEYS:
             raw = data.get(sk)
             if raw:
-                if sk in ("ct", "ht"):
-                    raw = raw.replace("%", "").strip()
+                val = raw.replace("%", "").strip() if sk == "ct" else raw
                 if sk in self.s_base_vars:
-                    self.s_base_vars[sk].set(raw)
+                    self.s_base_vars[sk].set(val)
+
+            raw_base = data.get(f"{sk}_base")
+            if raw_base:
+                val_base = raw_base.replace("%", "").strip() if sk == "ct" else raw_base
                 if sk in self.n_base_vars:
-                    self.n_base_vars[sk].set(raw)
+                    self.n_base_vars[sk].set(val_base)
+            elif raw:
+                # Stats without base column (e.g. HT) — derive from final / 1.4
+                val_num = self.try_float(raw.replace("%", "")) if sk == "ct" else self.try_float(raw)
+                if val_num:
+                    inferred_base = f"{val_num / WIKI_SIZE:.0f}"
+                    if sk in self.n_base_vars:
+                        self.n_base_vars[sk].set(inferred_base)
 
         form = data.get("form")
         mult = form_to_mult(form) if form else None
@@ -869,17 +1585,56 @@ class CalculadoraDMO:
                     self.n_evo_var.set(evo_name)
                     break
 
+        # Calculate Growth/Lv from Max and Base
         if mult and level_cap > 1:
             for sk in STAT_KEYS:
-                raw_growth = data.get(f"{sk}_growth")
-                if raw_growth:
-                    try:
-                        val_growth = self.try_float(raw_growth.replace("%", ""))
-                        growth_per_lv = val_growth / (level_cap - 1) / mult
+                try:
+                    max_val = data.get(sk)
+                    base_val = data.get(f"{sk}_base")
+                    if max_val and base_val:
+                        max_num = self.try_float(max_val.replace("%", ""))
+                        base_num = self.try_float(base_val.replace("%", ""))
+                        if sk == "ds":
+                            growth_per_lv = (max_num - base_num) / (level_cap - 1) / mult
+                        else:
+                            growth_per_lv = (max_num - WIKI_SIZE * base_num) / (level_cap - 1) / mult
                         if sk in self.n_growth_vars:
                             self.n_growth_vars[sk].set(f"{growth_per_lv:.3f}")
-                    except ValueError:
-                        pass
+                    elif max_val and not base_val:
+                        # Stats without base (e.g. HT) — no growth
+                        if sk in self.n_growth_vars:
+                            self.n_growth_vars[sk].set("0")
+                except ValueError:
+                    pass
+
+        # Show debug data
+        try:
+            self.wiki_debug_text.configure(state="normal")
+            self.wiki_debug_text.delete("1.0", tk.END)
+            lines = []
+            raw_rows = data.get("_raw_rows", [])
+            if raw_rows:
+                for ri, row in enumerate(raw_rows):
+                    cols = " | ".join(f"{c:>10}" if i > 0 else f"{c:<10}" for i, c in enumerate(row))
+                    lines.append(f"R{ri}  {cols}")
+            lines.append("")
+            lines.append(f"Fonte: {data.get('_source', '?')}")
+            lines.append(f"Form: {data.get('form', '?')}")
+            lines.append(f"Level Cap: {data.get('level_cap', '?')}")
+            for sk in STAT_KEYS:
+                fv = data.get(sk, "?")
+                bv = data.get(f"{sk}_base", "?")
+                lines.append(f"{sk.upper()}:  final={fv}  base={bv}")
+            raw_html = data.get("_table_html", "")
+            if raw_html:
+                lines.append("")
+                lines.append("--- HTML CRU (primeiros 500 chars) ---")
+                lines.append(raw_html[:500])
+            self.wiki_debug_text.insert("1.0", "\n".join(lines))
+            self.wiki_debug_text.configure(state="disabled")
+            self.wiki_debug_frame.pack(fill="x", pady=(6, 0))
+        except Exception as e:
+            self.wiki_status.config(text=f"Erro debug: {e}")
 
     def calcular(self):
         try:
@@ -988,7 +1743,7 @@ class CalculadoraDMO:
         nome = self.s_nome_var.get().strip()
         prefix = f"{nome}: " if nome and self.base_method.get() == "simples" else ""
         self.total_line.config(
-            text=f"{prefix}{fmt(hp)} HP | {fmt(ds)} DS | {fmt(at)} AT | {fmt(ct)}% CT | {fmt(ht)}% HT | {fmt(de)} DE"
+            text=f"{prefix}{fmt(hp)} HP | {fmt(ds)} DS | {fmt(at)} AT | {fmt(ct)}% CT | {fmt(ht)} HT | {fmt(de)} DE"
         )
 
 

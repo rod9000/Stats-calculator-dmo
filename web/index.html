@@ -20,6 +20,7 @@
   <button class="tab-btn" data-tab="reversa">Calculadora Reversa</button>
   <button class="tab-btn" data-tab="comparacao">Compara&ccedil;&atilde;o</button>
   <button class="tab-btn" data-tab="lista">Lista de Digimons</button>
+  <button class="tab-btn" data-tab="seals">Seals</button>
 </div>
 
 <!-- ===================== TAB 1: CALCULADORA ===================== -->
@@ -45,10 +46,6 @@
 
     <!-- SIMPLES -->
     <div id="simple-fields">
-      <div class="form-row">
-        <label>Size:</label>
-        <input type="number" id="sSize" value="1.4" step="0.1" min="0.5" max="2.5">
-      </div>
       <div class="stats-grid" style="grid-template-columns:80px repeat(6,1fr) 80px;">
         <div></div>
         <div class="header-cell">HP</div>
@@ -293,7 +290,59 @@
 
 </div> <!-- /app-card -->
 
+<!-- ===================== TAB 5: SEALS ===================== -->
+<div class="tab-content" id="tab-seals">
+
+  <div class="card">
+    <div class="card-title">Seal Calculator</div>
+
+    <!-- Sub-tabs -->
+    <div class="sub-tabs-nav">
+      <button class="sub-tab-btn active" data-subtab="seal-calc">Calculator</button>
+      <button class="sub-tab-btn" data-subtab="seal-browser">Seal Browser</button>
+    </div>
+
+    <!-- Stat buttons -->
+    <div class="seal-stats" id="sealStats"></div>
+
+    <!-- Calculator sub-tab -->
+    <div class="sub-tab-content active" id="subtab-seal-calc">
+      <div class="form-row">
+        <label>Target Value:</label>
+        <input type="number" id="sealTarget" min="1" placeholder="e.g. 3000">
+        <button class="btn-buscar" id="sealCalcBtn">Calculate</button>
+      </div>
+      <div id="sealResult"></div>
+    </div>
+
+    <!-- Browser sub-tab -->
+    <div class="sub-tab-content" id="subtab-seal-browser">
+      <div class="form-row">
+        <input type="text" id="sealSearch" placeholder="Search seal names..." style="flex:1;min-width:150px;">
+        <label><input type="checkbox" id="sealOwnedOnly"> Owned only</label>
+      </div>
+      <div class="list-table-wrap">
+        <table class="list-table" id="sealTable">
+          <thead>
+            <tr>
+              <th data-sort="name">Name</th>
+              <th data-sort="max" class="sort-right">Max</th>
+              <th data-sort="price" class="sort-right">Price (M)</th>
+              <th data-sort="efficiency" class="sort-right">Eff.</th>
+              <th>Owned</th>
+            </tr>
+          </thead>
+          <tbody id="sealBody"></tbody>
+        </table>
+      </div>
+      <div id="sealOwnedSummary"></div>
+    </div>
+  </div>
+
+</div>
+
 <script src="digimon_data.js"></script>
+<script src="seal_data.js"></script>
 <script src="app.js"></script>
 
 </body>

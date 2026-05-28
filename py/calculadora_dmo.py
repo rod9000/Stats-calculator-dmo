@@ -534,8 +534,11 @@ if getattr(sys, 'frozen', False):
     _base = sys._MEIPASS
 else:
     _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SEAL_STATS = ["AT", "CT", "HT", "HP", "DS", "DE", "BL", "EV"]
 _list_path = os.path.join(_base, "digimon_list.json")
 _save_list_path = os.path.join(_get_cache_dir(), "digimon_list.json")
+_SEALS_PATH = os.path.join(_base, "seals.json")
+_SEALS_OWNED_PATH = os.path.join(_get_cache_dir(), "seals_owned.json")
 if os.path.exists(_list_path):
     try:
         with open(_list_path, encoding="utf-8") as _f:
@@ -549,6 +552,30 @@ try:
             DIGIMON_NAMES = json.load(_f).get("digimon", [])
 except Exception:
     pass
+
+SEALS_DATA = []
+if os.path.exists(_SEALS_PATH):
+    try:
+        with open(_SEALS_PATH, encoding="utf-8") as _f:
+            SEALS_DATA = json.load(_f)
+    except Exception:
+        pass
+
+def _load_seals_owned():
+    if os.path.exists(_SEALS_OWNED_PATH):
+        try:
+            with open(_SEALS_OWNED_PATH, encoding="utf-8") as _f:
+                return json.load(_f)
+        except Exception:
+            pass
+    return {}
+
+def _save_seals_owned(data):
+    try:
+        with open(_SEALS_OWNED_PATH, "w", encoding="utf-8") as _f:
+            json.dump(data, _f, ensure_ascii=False)
+    except Exception:
+        pass
 
 if not DIGIMON_NAMES:
     DIGIMON_NAMES = [
@@ -615,6 +642,9 @@ class CalculadoraDMO:
         notebook.add(tab2, text="Calculadora Reversa")
         notebook.add(tab3, text="Comparação")
         notebook.add(tab4, text="Lista de Digimons")
+        tab5 = ttk.Frame(notebook, padding="8")
+        notebook.add(tab5, text="Seals")
+        self._build_seal_tab(tab5)
 
         canvas = tk.Canvas(tab1, highlightthickness=0, bg=self.theme["BG"])
         self.canvas = canvas
@@ -852,7 +882,7 @@ class CalculadoraDMO:
         method_frame = tk.Frame(card_base, bg=self.theme["CARD_BG"])
         method_frame.pack(fill="x", pady=(0, 8))
         self.base_method = tk.StringVar(value="simples")
-        ttk.Radiobutton(method_frame, text="Simples (Size x Base + Adicional)",
+        ttk.Radiobutton(method_frame, text="Simples (Base + Adicional)",
                         variable=self.base_method, value="simples",
                         command=self.toggle_base_method).pack(side="left", padx=(0, 20))
         ttk.Radiobutton(method_frame, text="Por Nivel (Lv, Evo, Growth)",
@@ -865,10 +895,6 @@ class CalculadoraDMO:
 
         top_row = tk.Frame(self.simple_frame, bg=self.theme["CARD_BG"])
         top_row.pack(fill="x", pady=(0, 6))
-        ttk.Label(top_row, text="Size:", style="TLabel").pack(side="left", padx=(0, 4))
-        self.s_size_var = tk.StringVar(value=str(self.SIZE_DEFAULT))
-        ttk.Entry(top_row, textvariable=self.s_size_var, width=8).pack(side="left", padx=(0, 20))
-
         ttk.Label(top_row, text="Nome:", style="TLabel").pack(side="left", padx=(0, 4))
         self.s_nome_var = tk.StringVar()
         ttk.Entry(top_row, textvariable=self.s_nome_var, width=20).pack(side="left")
@@ -1790,11 +1816,6 @@ class CalculadoraDMO:
         self._gain_per_lv = {sk: 0.0 for sk in STAT_KEYS}
 
         if method == "simples":
-            try:
-                size = self.try_float(self.s_size_var.get())
-            except ValueError:
-                messagebox.showerror("Erro", "Size invalido.")
-                return
             base_w_adic = {}
             for sk in STAT_KEYS:
                 try:
@@ -1803,10 +1824,7 @@ class CalculadoraDMO:
                 except ValueError:
                     messagebox.showerror("Erro", f"Valor invalido em {sk.upper()}.")
                     return
-                if sk == "ds":
-                    base_w_adic[sk] = bv + av
-                else:
-                    base_w_adic[sk] = size * bv + av
+                base_w_adic[sk] = bv + av
         else:
             try:
                 level = int(self.n_lvl_var.get().strip())
@@ -1878,6 +1896,365 @@ class CalculadoraDMO:
             text=f"{prefix}{fmt(hp)} HP | {fmt(ds)} DS | {fmt(at)} AT | {fmt(ct)}% CT | {fmt(ht)} HT | {fmt(de)} DE"
         )
 
+    # ===================== SEAL TAB =====================
+    def _build_seal_tab(self, parent):
+        t = self.theme
+
+        # Title
+        title = tk.Label(parent, text="Seal Calculator", font=("Segoe UI", 13, "bold"),
+                         bg=t["CARD_BG"], fg=t["ACCENT"])
+        title.pack(anchor="w", pady=(0, 8))
+
+        # Stat buttons
+        stat_frame = tk.Frame(parent, bg=t["CARD_BG"])
+        stat_frame.pack(fill="x", pady=(0, 8))
+
+        self._seal_stat_btns = {}
+        for st in SEAL_STATS:
+            btn = tk.Button(stat_frame, text=st, font=("Segoe UI", 10, "bold"),
+                            width=4, relief="flat", cursor="hand2")
+            btn.pack(side="left", padx=2)
+            self._seal_stat_btns[st] = btn
+
+        self._seal_current_stat = tk.StringVar(value="AT")
+
+        def _set_seal_stat(st):
+            self._seal_current_stat.set(st)
+            for s, b in self._seal_stat_btns.items():
+                if s == st:
+                    b.config(bg=t["ACCENT"], fg="#fff")
+                else:
+                    b.config(bg=t["PANEL_BG"], fg=t["LABEL_FG"])
+            _render_seal_browser()
+            _run_seal_calc()
+
+        for st, btn in self._seal_stat_btns.items():
+            btn.config(command=lambda s=st: _set_seal_stat(s))
+
+        # Sub-tab buttons (set_seal_stat called later after all helpers defined)
+        sub_frame = tk.Frame(parent, bg=t["CARD_BG"])
+        sub_frame.pack(fill="x", pady=(0, 6))
+        self._seal_sub_calc_btn = tk.Button(sub_frame, text="Calculator",
+            font=("Segoe UI", 10, "bold"), relief="flat", cursor="hand2",
+            bg=t["ACCENT"], fg="#fff")
+        self._seal_sub_calc_btn.pack(side="left", padx=(0, 4))
+        self._seal_sub_browser_btn = tk.Button(sub_frame, text="Seal Browser",
+            font=("Segoe UI", 10, "bold"), relief="flat", cursor="hand2",
+            bg=t["PANEL_BG"], fg=t["LABEL_FG"])
+        self._seal_sub_browser_btn.pack(side="left")
+
+        self._seal_calc_frame = tk.Frame(parent, bg=t["CARD_BG"])
+        self._seal_calc_frame.pack(fill="both", expand=True)
+        self._seal_browser_frame = tk.Frame(parent, bg=t["CARD_BG"])
+
+        def _show_seal_sub(sub):
+            if sub == "calc":
+                self._seal_calc_frame.pack(fill="both", expand=True)
+                self._seal_browser_frame.pack_forget()
+                self._seal_sub_calc_btn.config(bg=t["ACCENT"], fg="#fff")
+                self._seal_sub_browser_btn.config(bg=t["PANEL_BG"], fg=t["LABEL_FG"])
+            else:
+                self._seal_calc_frame.pack_forget()
+                self._seal_browser_frame.pack(fill="both", expand=True)
+                self._seal_sub_calc_btn.config(bg=t["PANEL_BG"], fg=t["LABEL_FG"])
+                self._seal_sub_browser_btn.config(bg=t["ACCENT"], fg="#fff")
+                _render_seal_browser()
+
+        self._seal_sub_calc_btn.config(command=lambda: _show_seal_sub("calc"))
+        self._seal_sub_browser_btn.config(command=lambda: _show_seal_sub("browser"))
+
+        # --- Calculator sub-tab ---
+        calc_frame = self._seal_calc_frame
+        row1 = tk.Frame(calc_frame, bg=t["CARD_BG"])
+        row1.pack(fill="x", pady=(0, 6))
+        tk.Label(row1, text="Target Value:", font=("Segoe UI", 10),
+                 bg=t["CARD_BG"], fg=t["LABEL_FG"]).pack(side="left", padx=(0, 6))
+        self._seal_target_var = tk.StringVar()
+        tk.Entry(row1, textvariable=self._seal_target_var, width=12,
+                 font=("Segoe UI", 10)).pack(side="left", padx=(0, 8))
+        self._seal_calc_btn = tk.Button(row1, text="Calculate",
+            font=("Segoe UI", 10, "bold"), bg=t["ACCENT"], fg="#fff",
+            relief="flat", cursor="hand2")
+        self._seal_calc_btn.pack(side="left")
+
+        # Owned notice
+        self._seal_owned_notice = tk.Label(calc_frame, font=("Segoe UI", 9),
+                                           bg=t["CARD_BG"], anchor="w")
+        self._seal_owned_notice.pack(fill="x", pady=(0, 4))
+
+        # Summary cards frame
+        self._seal_summary_frame = tk.Frame(calc_frame, bg=t["CARD_BG"])
+        self._seal_summary_frame.pack(fill="x", pady=(0, 6))
+
+        # Progress bar
+        self._seal_progress_frame = tk.Frame(calc_frame, bg=t["CARD_BG"])
+        self._seal_progress_frame.pack(fill="x", pady=(0, 6))
+
+        # Result table
+        self._seal_result_tree = ttk.Treeview(calc_frame, columns=("#", "Seal", "Stat", "Price", "Eff"),
+                                              show="headings", height=10)
+        self._seal_result_tree.heading("#", text="#")
+        self._seal_result_tree.heading("Seal", text="Seal")
+        self._seal_result_tree.heading("Stat", text="Stat")
+        self._seal_result_tree.heading("Price", text="Price (M)")
+        self._seal_result_tree.heading("Eff", text="Eff.")
+        self._seal_result_tree.column("#", width=30, anchor="center")
+        self._seal_result_tree.column("Seal", width=200)
+        self._seal_result_tree.column("Stat", width=70, anchor="center")
+        self._seal_result_tree.column("Price", width=90, anchor="e")
+        self._seal_result_tree.column("Eff", width=70, anchor="e")
+        self._seal_result_tree.pack(fill="both", expand=True)
+
+        # --- Browser sub-tab ---
+        browser_frame = self._seal_browser_frame
+        row_b1 = tk.Frame(browser_frame, bg=t["CARD_BG"])
+        row_b1.pack(fill="x", pady=(0, 6))
+        tk.Label(row_b1, text="Search:", font=("Segoe UI", 10),
+                 bg=t["CARD_BG"], fg=t["LABEL_FG"]).pack(side="left", padx=(0, 6))
+        self._seal_search_var = tk.StringVar()
+        self._seal_search_var.trace_add("write", lambda *_: _render_seal_browser())
+        tk.Entry(row_b1, textvariable=self._seal_search_var, width=25,
+                 font=("Segoe UI", 10)).pack(side="left", padx=(0, 12))
+        self._seal_owned_only_var = tk.BooleanVar()
+        tk.Checkbutton(row_b1, text="Owned only", variable=self._seal_owned_only_var,
+                       font=("Segoe UI", 9), bg=t["CARD_BG"], fg=t["LABEL_FG"],
+                       selectcolor=t["PANEL_BG"],
+                        command=lambda: _render_seal_browser()).pack(side="left")
+
+        # Browser Treeview with owned column
+        cols_b = ("Name", "Owned", "Max", "Price", "Eff")
+        self._seal_browser_tree = ttk.Treeview(browser_frame, columns=cols_b,
+                                                show="headings", height=18)
+        self._seal_browser_tree.heading("Name", text="Seal")
+        self._seal_browser_tree.heading("Owned", text="Owned")
+        self._seal_browser_tree.heading("Max", text="Max")
+        self._seal_browser_tree.heading("Price", text="Price (M)")
+        self._seal_browser_tree.heading("Eff", text="Eff.")
+        self._seal_browser_tree.column("Name", width=220)
+        self._seal_browser_tree.column("Owned", width=60, anchor="center")
+        self._seal_browser_tree.column("Max", width=70, anchor="e")
+        self._seal_browser_tree.column("Price", width=90, anchor="e")
+        self._seal_browser_tree.column("Eff", width=70, anchor="e")
+        self._seal_browser_tree.pack(fill="both", expand=True)
+
+        # Owned summary
+        self._seal_browser_summary = tk.Label(browser_frame, font=("Segoe UI", 10, "bold"),
+                                              bg=t["CARD_BG"], anchor="w")
+        self._seal_browser_summary.pack(fill="x", pady=(4, 0))
+
+        # Owned data
+        self._seal_owned = _load_seals_owned()
+        seal_sort_col = "Eff"
+        seal_sort_rev = True
+
+        def _get_seals_for_stat(stat):
+            result = []
+            for s in SEALS_DATA:
+                if s["stat"] != stat:
+                    continue
+                eff = s["max"] / s["price"] if s["price"] > 0 else 0
+                result.append({"id": s["id"], "name": s["name"], "stat": s["stat"],
+                               "max": s["max"], "price": s["price"],
+                               "buyable": s["buyable"], "efficiency": eff})
+            result.sort(key=lambda x: x["efficiency"], reverse=True)
+            return result
+
+        def _find_optimal_seals(stat, target, owned_ids):
+            available = [s for s in _get_seals_for_stat(stat)
+                         if s["price"] > 0 and s["id"] not in owned_ids]
+            selected = []
+            total_stat = 0
+            total_cost = 0
+            for s in available:
+                if total_stat >= target:
+                    break
+                selected.append(s)
+                total_stat += s["max"]
+                total_cost += s["price"]
+            return selected, total_stat, total_cost
+
+        def _owned_stat_total():
+            total = 0
+            for s in SEALS_DATA:
+                if s["stat"] == self._seal_current_stat.get() and self._seal_owned.get(str(s["id"]), 0) > 0:
+                    total += s["max"]
+            return total
+
+        def _owned_ids():
+            ids = set()
+            for k, v in self._seal_owned.items():
+                if v > 0:
+                    ids.add(int(k))
+            return ids
+
+        def _run_seal_calc(*args):
+            try:
+                target = int(self._seal_target_var.get().strip())
+            except (ValueError, AttributeError):
+                target = 0
+            stat = self._seal_current_stat.get()
+
+            # Clear
+            for w in self._seal_summary_frame.winfo_children():
+                w.destroy()
+            for w in self._seal_progress_frame.winfo_children():
+                w.destroy()
+            for item in self._seal_result_tree.get_children():
+                self._seal_result_tree.delete(item)
+            self._seal_owned_notice.config(text="")
+
+            if target <= 0:
+                return
+
+            owned_total = _owned_stat_total()
+            effective = max(0, target - owned_total)
+
+            if owned_total > 0:
+                self._seal_owned_notice.config(
+                    text=f"Owned: +{owned_total} {stat}  |  Need: +{effective}",
+                    fg=t["SUB_FG"])
+
+            if effective <= 0:
+                lbl = tk.Label(self._seal_summary_frame,
+                    text=f"✓ Target already reached! Owned: +{owned_total} {stat}",
+                    font=("Segoe UI", 11, "bold"), fg=t["SUCCESS"], bg=t["CARD_BG"])
+                lbl.pack(pady=10)
+                return
+
+            selected, total_stat, total_cost = _find_optimal_seals(stat, effective, _owned_ids())
+
+            # Summary cards
+            total_with_owned = total_stat + owned_total
+            for label, val, color in [
+                (f"Total {stat}", f"+{total_with_owned}", t["ACCENT"]),
+                ("Total Cost", f"{total_cost/1000:.1f}B" if total_cost >= 1000 else f"{total_cost:.1f}M", "#f59e0b"),
+                ("Seals Needed", str(len(selected)), t["LABEL_FG"]),
+            ]:
+                f = tk.Frame(self._seal_summary_frame, bg=t["CARD_BG"],
+                             highlightbackground=t["BORDER"], highlightthickness=1)
+                f.pack(side="left", fill="x", expand=True, padx=3)
+                tk.Label(f, text=label, font=("Segoe UI", 9), bg=t["CARD_BG"],
+                         fg=t["SUB_FG"]).pack(pady=(4, 0))
+                tk.Label(f, text=val, font=("Segoe UI", 16, "bold"),
+                         bg=t["CARD_BG"], fg=color).pack(pady=(0, 4))
+
+            # Progress bar
+            pct = min(100, (total_with_owned / target) * 100)
+            pf = tk.Frame(self._seal_progress_frame, bg=t["CARD_BG"])
+            pf.pack(fill="x")
+            bar_bg = tk.Frame(pf, bg=t["PANEL_BG"], height=10)
+            bar_bg.pack(fill="x")
+            bar_fill = tk.Frame(bar_bg, bg=t["ACCENT"], width=int(pct * 4))
+            bar_fill.place(relheight=1, relwidth=pct / 100)
+            tk.Label(pf, text=f"0  |  Target: {target}", font=("Segoe UI", 8),
+                     bg=t["CARD_BG"], fg=t["SUB_FG"]).pack(anchor="w")
+
+            # Result rows
+            for i, s in enumerate(selected):
+                self._seal_result_tree.insert("", "end", values=(
+                    str(i + 1), s["name"], f"+{s['max']}",
+                    f"{s['price']:.1f}", f"{s['efficiency']:.1f}"
+                ))
+
+        def _render_seal_browser(*args):
+            for item in self._seal_browser_tree.get_children():
+                self._seal_browser_tree.delete(item)
+
+            stat = self._seal_current_stat.get()
+            query = self._seal_search_var.get().strip().lower()
+            only_owned = self._seal_owned_only_var.get()
+            owned_total = _owned_stat_total()
+
+            seals = _get_seals_for_stat(stat)
+            if query:
+                seals = [s for s in seals if query in s["name"].lower()]
+            if only_owned:
+                seals = [s for s in seals if self._seal_owned.get(str(s["id"]), 0) > 0]
+
+            # Sort
+            rev = -1 if seal_sort_rev else 1
+            if seal_sort_col == "Name":
+                seals.sort(key=lambda s: s["name"].lower(), reverse=seal_sort_rev)
+            elif seal_sort_col == "Max":
+                seals.sort(key=lambda s: s["max"], reverse=seal_sort_rev)
+            elif seal_sort_col == "Price":
+                seals.sort(key=lambda s: s["price"], reverse=seal_sort_rev)
+            elif seal_sort_col == "Eff":
+                seals.sort(key=lambda s: s["efficiency"], reverse=seal_sort_rev)
+
+            for s in seals:
+                owned = self._seal_owned.get(str(s["id"]), 0)
+                price_txt = f"{s['price']:.1f}" if s["price"] > 0 else "---"
+                eff_txt = f"{s['efficiency']:.1f}" if s["efficiency"] > 0 else "---"
+                self._seal_browser_tree.insert("", "end", iid=str(s["id"]), values=(
+                    s["name"], str(owned) if owned else "",
+                    f"+{s['max']}", price_txt, eff_txt
+                ))
+                # Highlight owned
+                if owned > 0:
+                    self._seal_browser_tree.tag_configure("owned", background=t["ACCENT_SOFT"])
+                    self._seal_browser_tree.item(str(s["id"]), tags=("owned",))
+
+            # Summary
+            if owned_total > 0:
+                self._seal_browser_summary.config(
+                    text=f"Your {stat} seals: +{owned_total}",
+                    fg=t["ACCENT"])
+            else:
+                self._seal_browser_summary.config(text="")
+
+        # Browser Treeview sort on header click
+        def _seal_browser_sort(col):
+            nonlocal seal_sort_col, seal_sort_rev
+            if seal_sort_col == col:
+                seal_sort_rev = not seal_sort_rev
+            else:
+                seal_sort_col = col
+                seal_sort_rev = True
+            _render_seal_browser()
+
+        for col in cols_b:
+            self._seal_browser_tree.heading(col, command=lambda c=col: _seal_browser_sort(c))
+
+        # Browser owned editing - double-click to edit
+        self._seal_browser_tree.bind("<Double-1>", lambda e: _edit_seal_owned(e))
+
+        def _edit_seal_owned(event):
+            item = self._seal_browser_tree.identify_row(event.y)
+            col = self._seal_browser_tree.identify_column(event.x)
+            if not item or int(col.replace("#", "")) != 2:  # Only Owned column
+                return
+            x, y, w, h = self._seal_browser_tree.bbox(item, column="Owned")
+            current = self._seal_owned.get(item, 0)
+            entry = tk.Entry(self._seal_browser_tree, width=6, font=("Segoe UI", 9))
+            entry.insert(0, str(current) if current else "")
+            entry.place(x=x, y=y, width=w, height=h)
+            entry.focus()
+            entry.select_range(0, "end")
+
+            def _save_edit(*args):
+                try:
+                    val = int(entry.get().strip()) if entry.get().strip() else 0
+                except ValueError:
+                    val = 0
+                if val > 0:
+                    self._seal_owned[item] = val
+                elif item in self._seal_owned:
+                    del self._seal_owned[item]
+                _save_seals_owned(self._seal_owned)
+                entry.destroy()
+                _render_seal_browser()
+                _run_seal_calc()
+
+            entry.bind("<Return>", _save_edit)
+            entry.bind("<FocusOut>", _save_edit)
+
+        # Bind calculate
+        self._seal_calc_btn.config(command=_run_seal_calc)
+        self._seal_target_var.trace_add("write", lambda *_: _run_seal_calc())
+
+        # Now that all helpers are defined, initialize stat selection
+        _set_seal_stat("AT")
 
 if __name__ == "__main__":
     root = tk.Tk()

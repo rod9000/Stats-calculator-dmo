@@ -1,5 +1,4 @@
-// Auto-generated from digimon_stats_cache.json and digimon_list.json
-// ====== DIGIMON CACHE DATA ======
+// Auto-generated
 const DIGIMON_CACHE = {
   "Agumon": {
     "form": "Rookie",
@@ -849,7 +848,7 @@ const DIGIMON_CACHE = {
     "ht_base": null,
     "de": "633",
     "de_base": "412",
-    "_cached_at": "2026-05-28T11:10:16.195101"
+    "_cached_at": "2026-05-28T14:11:54.689423"
   },
   "Omegamon Zwart": {
     "form": "Jogress",
@@ -1752,10 +1751,43 @@ const DIGIMON_CACHE = {
     "de": "503",
     "de_base": "320",
     "_cached_at": "2026-05-27T17:00:46.427438"
+  },
+  "BloomLordmon": {
+    "form": "Mega",
+    "level_cap": 170,
+    "hp": "27932",
+    "hp_base": "19050",
+    "ds": "6294",
+    "ds_base": "5170",
+    "at": "11491",
+    "at_base": "8094",
+    "ct": "38.06%",
+    "ct_base": "15.29%",
+    "ht": "500",
+    "ht_base": null,
+    "de": "623",
+    "de_base": "418",
+    "_cached_at": "2026-05-28T14:31:53.524481"
+  },
+  "Eosmon Lv6": {
+    "form": "Mega",
+    "level_cap": 170,
+    "hp": "28626",
+    "hp_base": "19546",
+    "ds": "7779",
+    "ds_base": "6655",
+    "at": "12004",
+    "at_base": "8460",
+    "ct": "39.84%",
+    "ct_base": "16.56%",
+    "ht": "520",
+    "ht_base": null,
+    "de": "778",
+    "de_base": "529",
+    "_cached_at": "2026-05-28T14:53:53.517552"
   }
 };
 
-// ====== DIGIMON NAMES ======
 const DIGIMON_NAMES = [
   "Agumon",
   "Agumon X",
@@ -1764,6 +1796,7 @@ const DIGIMON_NAMES = [
   "Alphamon Ouryuken (Awaken)",
   "Alphamon Ouryuken (Extreme)",
   "Alphamon Ouryuken X",
+  "Alphamon Ouryouken X Extreme",
   "Angemon",
   "Angewomon",
   "Angoramon",
@@ -1774,6 +1807,7 @@ const DIGIMON_NAMES = [
   "Belphemon (Rage Mode)",
   "Betamon",
   "Biyomon",
+  "BloomLordmon",
   "Candlemon",
   "Cherubimon",
   "Craniamon",
@@ -1785,6 +1819,7 @@ const DIGIMON_NAMES = [
   "Dorumon",
   "Duftmon",
   "Dynasmon",
+  "Eosmon Lv6",
   "Examon",
   "Examon X",
   "Falcomon",
@@ -1814,10 +1849,10 @@ const DIGIMON_NAMES = [
   "Imperialdramon (Fighter Mode)",
   "Imperialdramon (Paladin Mode)",
   "Impmon",
-  "Impmon",
   "Jellymon",
   "Jesmon",
   "Jesmon X",
+  "Kimeramon",
   "Kokuwamon",
   "Koromon",
   "Kotemon",
@@ -1874,12 +1909,10 @@ const DIGIMON_NAMES = [
   "Wormmon"
 ];
 
-// ====== CONSTANTS ======
 const STAT_KEYS = ["hp", "ds", "at", "ct", "ht", "de"];
 const STAT_LABELS = {"hp": "HP", "ds": "DS", "at": "AT", "ct": "CT(%)", "ht": "HT", "de": "DE"};
 
 const FLAT_CATEGORIES = ["Selos", "Chipset", "D-Unit", "Equipamentos", "Achievements", "Buff Tamer"];
-
 const WIKI_SIZE = 1.4;
 
 const EVO_OPTIONS = [
@@ -1892,41 +1925,31 @@ const EVO_OPTIONS = [
 ];
 
 const EVO_DATA = {
-  "Rookie": 1.0,
-  "Champion": 1.5,
-  "Ultimate": 1.85,
-  "Armor": 1.85,
-  "Spirit": 1.85,
-  "Mega": 2.0,
-  "Burst Mode": 2.5,
-  "Side Mega": 2.5,
-  "Variant": 2.5,
-  "Jogress": 3.0,
-  "Fusion": 3.0,
+  "Rookie": 1.0,  "Champion": 1.5,  "Ultimate": 1.85,  "Armor": 1.85,
+  "Spirit": 1.85,  "Mega": 2.0,  "Burst Mode": 2.5,  "Side Mega": 2.5,
+  "Variant": 2.5,  "Jogress": 3.0,  "Fusion": 3.0,
 };
 
 const CLONE_DATA = [
-  [0, "0%", "0%", "0%", "0%", "0%"],
-  [1, "3%", "15%", "2%", "12%", "2%"],
-  [2, "6%", "30%", "4%", "24%", "4%"],
-  [3, "9%", "45%", "6%", "36%", "6%"],
-  [4, "14%", "70%", "9%", "56%", "9%"],
-  [5, "19%", "95%", "12%", "76%", "12%"],
-  [6, "24%", "120%", "15%", "96%", "15%"],
-  [7, "34%", "170%", "21%", "136%", "19%"],
-  [8, "44%", "220%", "27%", "176%", "23%"],
-  [9, "54%", "270%", "33%", "216%", "27%"],
-  [10, "69%", "345%", "42%", "276%", "31%"],
-  [11, "84%", "420%", "51%", "336%", "35%"],
-  [12, "99%", "495%", "60%", "396%", "39%"],
-  [13, "114%", "570%", "69%", "456%", "44%"],
-  [14, "129%", "645%", "78%", "516%", "49%"],
-  [15, "144%", "720%", "87%", "576%", "54%"],
+  [0,"0%","0%","0%","0%","0%"],
+  [1,"3%","15%","2%","12%","2%"],
+  [2,"6%","30%","4%","24%","4%"],
+  [3,"9%","45%","6%","36%","6%"],
+  [4,"14%","70%","9%","56%","9%"],
+  [5,"19%","95%","12%","76%","12%"],
+  [6,"24%","120%","15%","96%","15%"],
+  [7,"34%","170%","21%","136%","19%"],
+  [8,"44%","220%","27%","176%","23%"],
+  [9,"54%","270%","33%","216%","27%"],
+  [10,"69%","345%","42%","276%","31%"],
+  [11,"84%","420%","51%","336%","35%"],
+  [12,"99%","495%","60%","396%","39%"],
+  [13,"114%","570%","69%","456%","44%"],
+  [14,"129%","645%","78%","516%","49%"],
+  [15,"144%","720%","87%","576%","54%"],
 ];
-
-const CLONE_NUM = CLONE_DATA.map(function(row) {
-  return [row[0], parseFloat(row[1])/100, parseFloat(row[2])/100,
-          parseFloat(row[3])/100, parseFloat(row[4])/100, parseFloat(row[5])/100];
+const CLONE_NUM = CLONE_DATA.map(function(r) {
+  return [r[0], parseFloat(r[1])/100, parseFloat(r[2])/100, parseFloat(r[3])/100, parseFloat(r[4])/100, parseFloat(r[5])/100];
 });
 
 const NAME_ALIASES = {

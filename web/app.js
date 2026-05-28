@@ -4,8 +4,12 @@ document.addEventListener('DOMContentLoaded', function() {
   initApp();
 });
 
-function copyResults() {
-  var hp = document.getElementById('resTotal-hp').textContent;
+  function escapeHtml(s) {
+    var d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML;
+  }
+
+  function copyResults() {
+    var hp = document.getElementById('resTotal-hp').textContent;
   var ds = document.getElementById('resTotal-ds').textContent;
   var at = document.getElementById('resTotal-at').textContent;
   var ct = document.getElementById('resTotal-ct').textContent;
@@ -104,6 +108,17 @@ function initApp() {
   }
 
   // ===================== SEARCH (BUSCAR) =====================
+  var serverOnline = false;
+
+  function checkServer() {
+    fetch('/api/search?name=_ping_').then(function(r) {
+      serverOnline = r.status === 400; // 400 = missing name (expected)
+    }).catch(function() {
+      serverOnline = false;
+    });
+  }
+  checkServer();
+
   function buscarDigimon(nome) {
     if (!nome) return null;
     var dados = DIGIMON_CACHE[nome];
@@ -112,7 +127,6 @@ function initApp() {
       dados._source = 'cache';
       return dados;
     }
-    // Try alias
     var key = nome.toLowerCase().replace(/\s+/g, ' ').replace(/['":]/g, '')
                 .replace(/\(/g, ' ').replace(/\)/g, ' ').replace(/\s+/g, ' ').trim();
     var alias = NAME_ALIASES[key];
@@ -123,6 +137,44 @@ function initApp() {
       return dados;
     }
     return null;
+  }
+
+  function buscarDigimonOnline(nome) {
+    return fetch('/api/search?name=' + encodeURIComponent(nome))
+      .then(function(r) {
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data || data.error) return null;
+        data._name = nome;
+        data._source = data._source || 'server';
+        // Add to local cache for next time
+        DIGIMON_CACHE[nome] = data;
+        return data;
+      })
+      .catch(function() {
+        return null;
+      });
+  }
+
+  function buscarEFill(nome, statusEl) {
+    var dados = buscarDigimon(nome);
+    if (dados) {
+      if (statusEl) statusEl.textContent = '';
+      preencherDados(dados);
+      return;
+    }
+    if (statusEl) statusEl.textContent = 'Buscando online...';
+    buscarDigimonOnline(nome).then(function(dados) {
+      if (dados) {
+        if (statusEl) statusEl.textContent = '';
+        preencherDados(dados);
+      } else {
+        if (statusEl) statusEl.textContent = '';
+        mostrarErroBusca(nome);
+      }
+    });
   }
 
   // ===================== FLAT GRID GENERATION =====================
@@ -240,17 +292,13 @@ function initApp() {
 
   // Search on calculator tab
   setupAutocomplete('#calcSearch', '#calcAutoList', function(name) {
-    var dados = buscarDigimon(name);
-    if (dados) preencherDados(dados);
-    else mostrarErroBusca(name);
+    buscarEFill(name, $('#calcStatus'));
   });
 
   $('#calcBuscarBtn').addEventListener('click', function() {
     var name = $('#calcSearch').value.trim();
     if (!name) return;
-    var dados = buscarDigimon(name);
-    if (dados) preencherDados(dados);
-    else mostrarErroBusca(name);
+    buscarEFill(name, $('#calcStatus'));
   });
 
   function preencherDados(dados) {
@@ -268,7 +316,6 @@ function initApp() {
           $('#sBase-' + sk).value = val;
         }
         $('#sAdic-' + sk).value = '';
-        $('#sSize').value = WIKI_SIZE;
       });
     } else {
       STAT_KEYS.forEach(function(sk) {
@@ -325,15 +372,10 @@ function initApp() {
     var gainPerLv = {};
 
     if (mode === 'simples') {
-      var size = parseNum($('#sSize').value) || 1.4;
       STAT_KEYS.forEach(function(sk) {
         var bv = parseNum($('#sBase-' + sk).value);
         var av = parseNum($('#sAdic-' + sk).value);
-        if (sk === 'ds') {
-          baseWAdic[sk] = bv + av;
-        } else {
-          baseWAdic[sk] = size * bv + av;
-        }
+        baseWAdic[sk] = bv + av;
         gainPerLv[sk] = null;
       });
     } else {
@@ -613,12 +655,7 @@ function initApp() {
     }
   }
 
-  function compareSearch(idx) {
-    var input = $('#cmpSearch-' + idx);
-    if (!input) return;
-    var name = input.value.trim();
-    if (!name) return;
-    var dados = buscarDigimon(name);
+  function preencherCompareCard(idx, dados) {
     var status = $('#cmpStatus-' + idx);
     var info = $('#cmpInfo-' + idx);
     var tbody = $('#cmpBody-' + idx);
@@ -643,16 +680,32 @@ function initApp() {
       label.textContent = STAT_LABELS[sk];
       label.style.fontWeight = '600';
       tr.appendChild(label);
-
       var finalTd = document.createElement('td');
       finalTd.textContent = dados[sk] || '-';
       tr.appendChild(finalTd);
-
       var baseTd = document.createElement('td');
       baseTd.textContent = dados[sk + '_base'] != null ? dados[sk + '_base'] : '-';
       tr.appendChild(baseTd);
-
       tbody.appendChild(tr);
+    });
+  }
+
+  function compareSearch(idx) {
+    var input = $('#cmpSearch-' + idx);
+    if (!input) return;
+    var name = input.value.trim();
+    if (!name) return;
+    var status = $('#cmpStatus-' + idx);
+
+    var dados = buscarDigimon(name);
+    if (dados) {
+      preencherCompareCard(idx, dados);
+      return;
+    }
+
+    status.textContent = 'Buscando online...';
+    buscarDigimonOnline(name).then(function(dados) {
+      preencherCompareCard(idx, dados);
     });
   }
 
@@ -731,4 +784,225 @@ function initApp() {
 
   // Refresh list
   $('#refreshListBtn').addEventListener('click', populateList);
+
+  // ===================== SEALS TAB =====================
+  var SEAL_STATS = ['AT','CT','HT','HP','DS','DE','BL','EV'];
+  var SEAL_COLORS = {
+    AT:'#ef4444', CT:'#f97316', HT:'#eab308', HP:'#ec4899',
+    DS:'#3b82f6', DE:'#06b6d4', BL:'#10b981', EV:'#a855f7'
+  };
+
+  function getSealsForStat(stat) {
+    return SEALS.filter(function(s) { return s.stat === stat; }).map(function(s) {
+      return { id:s.id, name:s.name, stat:s.stat, max:s.max, price:s.price,
+        buyable:s.buyable, efficiency: s.price > 0 ? s.max / s.price : 0 };
+    }).sort(function(a, b) { return b.efficiency - a.efficiency; });
+  }
+
+  function findOptimalSeals(stat, target, ownedIds) {
+    var available = getSealsForStat(stat).filter(function(s) {
+      return s.price > 0 && !ownedIds.has(s.id);
+    });
+    var selected = [], totalStat = 0, totalCost = 0;
+    for (var i = 0; i < available.length; i++) {
+      if (totalStat >= target) break;
+      selected.push(available[i]);
+      totalStat += available[i].max;
+      totalCost += available[i].price;
+    }
+    return { seals: selected, totalStat: totalStat, totalCost: totalCost };
+  }
+
+  // Load owned from localStorage
+  var sealOwned = {};
+  try { sealOwned = JSON.parse(localStorage.getItem('dmoseals') || '{}'); } catch(e) {}
+
+  function saveSealOwned() {
+    localStorage.setItem('dmoseals', JSON.stringify(sealOwned));
+  }
+
+  var sealStat = 'AT';
+  function renderSealStats() {
+    var container = $('#sealStats');
+    container.innerHTML = '';
+    SEAL_STATS.forEach(function(st) {
+      var btn = document.createElement('button');
+      btn.className = 'seal-stat-btn' + (st === sealStat ? ' active' : '');
+      btn.textContent = st;
+      btn.style.background = st === sealStat ? SEAL_COLORS[st] : '';
+      btn.style.color = st === sealStat ? '#fff' : '';
+      btn.addEventListener('click', function() {
+        sealStat = st;
+        renderSealStats();
+        renderSealBrowser();
+        runSealCalc();
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  // Sub-tab switching
+  document.querySelector('.sub-tabs-nav').addEventListener('click', function(e) {
+    var btn = e.target.closest('.sub-tab-btn');
+    if (!btn) return;
+    $$('.sub-tab-btn').forEach(function(b) { b.classList.toggle('active', b === btn); });
+    $$('.sub-tab-content').forEach(function(c) {
+      c.classList.toggle('active', c.id === 'subtab-' + btn.dataset.subtab);
+    });
+    if (btn.dataset.subtab === 'seal-calc') runSealCalc();
+  });
+
+  function ownedStatTotal() {
+    var total = 0;
+    SEALS.forEach(function(s) {
+      if (s.stat === sealStat && (sealOwned[s.id] || 0) > 0) total += s.max;
+    });
+    return total;
+  }
+
+  function ownedIds() {
+    var ids = new Set();
+    Object.keys(sealOwned).forEach(function(id) {
+      if (sealOwned[id] > 0) ids.add(parseInt(id));
+    });
+    return ids;
+  }
+
+  var sealSortBy = 'efficiency', sealSortAsc = false;
+
+  function renderSealBrowser() {
+    var tbody = $('#sealBody');
+    var ownedTotal = ownedStatTotal();
+    var query = ($('#sealSearch').value || '').toLowerCase();
+    var onlyOwned = $('#sealOwnedOnly').checked;
+
+    var list = getSealsForStat(sealStat);
+    if (query) list = list.filter(function(s) { return s.name.toLowerCase().includes(query); });
+    if (onlyOwned) list = list.filter(function(s) { return (sealOwned[s.id] || 0) > 0; });
+
+    list.sort(function(a, b) {
+      var cmp = 0;
+      if (sealSortBy === 'name') cmp = a.name.localeCompare(b.name);
+      else if (sealSortBy === 'max') cmp = a.max - b.max;
+      else if (sealSortBy === 'price') cmp = a.price - b.price;
+      else if (sealSortBy === 'efficiency') cmp = a.efficiency - b.efficiency;
+      return sealSortAsc ? cmp : -cmp;
+    });
+
+    tbody.innerHTML = '';
+    list.forEach(function(s) {
+      var tr = document.createElement('tr');
+      var owned = sealOwned[s.id] || 0;
+      if (owned > 0) tr.style.background = 'var(--accent-soft)';
+      tr.innerHTML =
+        '<td class="name-cell">' + escapeHtml(s.name) + '</td>' +
+        '<td class="sort-right">+' + s.max + '</td>' +
+        '<td class="sort-right">' + (s.price > 0 ? s.price.toFixed(1) : '&mdash;') + '</td>' +
+        '<td class="sort-right">' + (s.efficiency > 0 ? s.efficiency.toFixed(1) : '&mdash;') + '</td>' +
+        '<td><input type="number" class="seal-table-owned" value="' + (owned || '') + '" min="0" data-id="' + s.id + '"></td>';
+      tbody.appendChild(tr);
+    });
+
+    // Owned input handler
+    tbody.addEventListener('input', function(e) {
+      var inp = e.target.closest('.seal-table-owned');
+      if (!inp) return;
+      var id = parseInt(inp.dataset.id);
+      sealOwned[id] = parseInt(inp.value) || 0;
+      if (!sealOwned[id]) delete sealOwned[id];
+      saveSealOwned();
+      renderSealBrowser();
+      if (document.querySelector('[data-subtab="seal-calc"].active')) runSealCalc();
+    });
+
+    // Summary
+    var summary = $('#sealOwnedSummary');
+    if (ownedTotal > 0) {
+      summary.textContent = 'Your ' + sealStat + ' seals: +' + ownedTotal;
+      summary.style.color = SEAL_COLORS[sealStat];
+    } else {
+      summary.textContent = '';
+    }
+  }
+
+  // Table header sort
+  $('#sealTable').addEventListener('click', function(e) {
+    var th = e.target.closest('th[data-sort]');
+    if (!th) return;
+    var col = th.dataset.sort;
+    if (sealSortBy === col) sealSortAsc = !sealSortAsc;
+    else { sealSortBy = col; sealSortAsc = false; }
+    renderSealBrowser();
+  });
+
+  // Live search and owned-only filter
+  $('#sealSearch').addEventListener('input', renderSealBrowser);
+  $('#sealOwnedOnly').addEventListener('change', renderSealBrowser);
+
+  function runSealCalc() {
+    var targetInput = $('#sealTarget');
+    var target = parseInt(targetInput.value) || 0;
+    var container = $('#sealResult');
+    var ownedTotal = ownedStatTotal();
+    var effectiveTarget = Math.max(0, target - ownedTotal);
+
+    if (target <= 0) {
+      container.innerHTML = '<p style="color:var(--sub-fg);padding:20px 0;">Enter a target value and click Calculate.</p>';
+      return;
+    }
+
+    if (effectiveTarget <= 0) {
+      container.innerHTML =
+        '<div class="seal-stat-card" style="border-color:var(--success);">' +
+        '<p style="font-weight:700;color:var(--success);font-size:16px;margin-bottom:4px;">Target already reached!</p>' +
+        '<p style="font-size:13px;color:var(--sub-fg);">Your owned seals provide +' + ownedTotal + ' ' + sealStat + '</p></div>';
+      return;
+    }
+
+    var result = findOptimalSeals(sealStat, effectiveTarget, ownedIds());
+
+    var html = '';
+    if (ownedTotal > 0) {
+      html += '<p style="font-size:12px;color:var(--sub-fg);margin-bottom:6px;">Owned: +' + ownedTotal + ' ' + sealStat +
+        ' &rarr; Need: +' + effectiveTarget + '</p>';
+    }
+
+    // Summary cards
+    var totalWithOwned = result.totalStat + ownedTotal;
+    html += '<div class="seal-result-summary">';
+    html += '<div class="seal-stat-card"><div class="label">Total ' + sealStat + '</div><div class="value">+' + totalWithOwned + '</div></div>';
+    html += '<div class="seal-stat-card"><div class="label">Total Cost</div><div class="value" style="color:#f59e0b;">' +
+      (result.totalCost >= 1000 ? (result.totalCost / 1000).toFixed(1) + 'B' : result.totalCost.toFixed(1) + 'M') +
+      '</div></div>';
+    html += '<div class="seal-stat-card"><div class="label">Seals Needed</div><div class="value">' + result.seals.length + '</div></div>';
+    html += '</div>';
+
+    // Progress bar
+    var pct = Math.min(100, (totalWithOwned / target) * 100);
+    html += '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + SEAL_COLORS[sealStat] + '"></div></div>';
+    html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--sub-fg);margin-bottom:10px;"><span>0</span><span>Target: ' + target + '</span></div>';
+
+    if (result.seals.length > 0) {
+      html += '<div style="font-weight:600;font-size:13px;margin-bottom:6px;">Recommended Seals (by efficiency)</div>';
+      html += '<div class="list-table-wrap" style="max-height:350px;"><table class="list-table"><thead><tr>';
+      html += '<th>#</th><th>Seal</th><th>' + sealStat + '</th><th>Price (M)</th><th>Eff.</th>';
+      html += '</tr></thead><tbody>';
+      result.seals.forEach(function(s, i) {
+        html += '<tr><td>' + (i+1) + '</td><td class="name-cell">' + escapeHtml(s.name) +
+          '</td><td>+' + s.max + '</td><td>' + s.price.toFixed(1) +
+          '</td><td>' + s.efficiency.toFixed(1) + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  $('#sealCalcBtn').addEventListener('click', runSealCalc);
+  $('#sealTarget').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') runSealCalc();
+  });
+
+  renderSealStats();
+  renderSealBrowser();
 }

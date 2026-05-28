@@ -138,7 +138,7 @@ CACHE_TTL_DAYS = 7
 def _get_cache_dir():
     if getattr(sys, 'frozen', False):
         return os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), "CalculadoraDMO")
-    return os.path.dirname(os.path.abspath(__file__))
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 _cache_path = os.path.join(_get_cache_dir(), "digimon_stats_cache.json")
@@ -533,7 +533,7 @@ DIGIMON_NAMES = []
 if getattr(sys, 'frozen', False):
     _base = sys._MEIPASS
 else:
-    _base = os.path.dirname(os.path.abspath(__file__))
+    _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _list_path = os.path.join(_base, "digimon_list.json")
 _save_list_path = os.path.join(_get_cache_dir(), "digimon_list.json")
 if os.path.exists(_list_path):
@@ -596,7 +596,7 @@ class CalculadoraDMO:
 
     def __init__(self, root):
         root.title("Digimon Master Online - Calculadora Final")
-        root.resizable(False, False)
+        root.resizable(True, True)
         self.dark_mode = False
         self.theme = dict(self.LIGHT_THEME)
         self.root = root
@@ -610,9 +610,11 @@ class CalculadoraDMO:
         tab1 = ttk.Frame(notebook, padding="8")
         tab2 = ttk.Frame(notebook, padding="8")
         tab3 = ttk.Frame(notebook, padding="8")
+        tab4 = ttk.Frame(notebook, padding="8")
         notebook.add(tab1, text="Calculadora")
         notebook.add(tab2, text="Calculadora Reversa")
         notebook.add(tab3, text="Comparação")
+        notebook.add(tab4, text="Lista de Digimons")
 
         canvas = tk.Canvas(tab1, highlightthickness=0, bg=self.theme["BG"])
         self.canvas = canvas
@@ -636,6 +638,7 @@ class CalculadoraDMO:
         self.build_main_ui(main)
         self.build_rev_ui(tab2)
         self.build_compare_ui(tab3)
+        self.build_list_ui(tab4)
 
         root.update_idletasks()
         cw = main.winfo_reqwidth() + 50
@@ -699,6 +702,16 @@ class CalculadoraDMO:
         style.configure("TCheckbutton", background=t["CARD_BG"], foreground=t["LABEL_FG"],
                         font=("Segoe UI", 9))
         style.configure("TProgressbar", troughcolor=t["ACCENT_SOFT"], background=t["ACCENT"], borderwidth=0)
+        style.configure("Treeview", background=t["CARD_BG"], foreground=t["LABEL_FG"],
+                        fieldbackground=t["CARD_BG"], bordercolor=t["BORDER"],
+                        font=("Segoe UI", 9), rowheight=26)
+        style.configure("Treeview.Heading", background=t["PANEL_BG"], foreground=t["LABEL_FG"],
+                        font=("Segoe UI", 9, "bold"), bordercolor=t["BORDER"])
+        style.map("Treeview",
+                  background=[("selected", t["ACCENT"])],
+                  foreground=[("selected", "white")])
+        style.map("Treeview.Heading",
+                  background=[("active", t["ACCENT_SOFT"])])
         self.root.configure(bg=t["BG"])
 
     def try_float(self, val):
@@ -749,6 +762,9 @@ class CalculadoraDMO:
                 child.configure(bg=t["INPUT_BG"], fg=t["INPUT_FG"], insertbackground=t["INPUT_FG"])
             elif isinstance(child, tk.Entry):
                 child.configure(bg=t["INPUT_BG"], fg=t["INPUT_FG"], insertbackground=t["INPUT_FG"])
+            elif isinstance(child, ttk.Treeview):
+                child.tag_configure("uncached", foreground=t["SUB_FG"])
+                child.tag_configure("cached", foreground=t["LABEL_FG"])
             self._apply_theme(child)
 
     def build_main_ui(self, parent):
@@ -1397,6 +1413,124 @@ class CalculadoraDMO:
         except Exception:
             pass
 
+    # ===================== LISTA DE DIGIMONS =====================
+    def build_list_ui(self, parent):
+        t = self.theme
+        cache = _load_cache()
+
+        top = tk.Frame(parent, bg=t["BG"])
+        top.pack(fill="x", pady=(0, 8))
+        ttk.Label(top, text="Lista de Digimons", style="Header.TLabel").pack(side="left")
+
+        cached_count = sum(1 for n in DIGIMON_NAMES if n in cache)
+        total_count = len(DIGIMON_NAMES)
+        self.list_status_label = ttk.Label(
+            top, text=f"{cached_count}/{total_count} em cache",
+            style="Sub.TLabel"
+        )
+        self.list_status_label.pack(side="left", padx=(12, 0))
+
+        refresh_btn = tk.Button(
+            top, text="⟳ Atualizar", command=self._refresh_list,
+            bg=t["ACCENT"], fg="white", font=("Segoe UI", 9, "bold"),
+            padx=10, pady=2, bd=0, cursor="hand2",
+            activebackground=t["ACCENT"]
+        )
+        refresh_btn.pack(side="right")
+
+        container = tk.Frame(parent, bg=t["BG"])
+        container.pack(fill="both", expand=True)
+
+        columns = ("form", "hp", "ds", "at", "ct", "ht", "de", "level_cap")
+        headings = {
+            "form": "Forma", "hp": "HP", "ds": "DS", "at": "AT",
+            "ct": "CT(%)", "ht": "HT", "de": "DE", "level_cap": "Lv Cap"
+        }
+
+        all_columns = ("nome",) + columns
+        all_headings = {"nome": "Nome", **headings}
+
+        self.list_tree = ttk.Treeview(
+            container, columns=all_columns, show="headings",
+            height=30, selectmode="browse"
+        )
+
+        for col in all_columns:
+            width = 200 if col == "nome" else (100 if col == "form" else 70)
+            self.list_tree.column(col, width=width, anchor="center" if col != "nome" else "w")
+            self.list_tree.heading(
+                col, text=all_headings[col],
+                command=lambda c=col: self._sort_treeview(c, False)
+            )
+
+        vsb = ttk.Scrollbar(container, orient="vertical", command=self.list_tree.yview)
+        self.list_tree.configure(yscrollcommand=vsb.set)
+        self.list_tree.pack(side="left", fill="both", expand=True)
+        vsb.pack(side="right", fill="y")
+
+        self.list_tree.tag_configure("uncached", foreground=t["SUB_FG"])
+        self.list_tree.tag_configure("cached", foreground=t["LABEL_FG"])
+
+        self._populate_list(cache)
+
+        self._list_sort_col = None
+        self._list_sort_rev = False
+
+    def _populate_list(self, cache=None):
+        if cache is None:
+            cache = _load_cache()
+        self.list_tree.delete(*self.list_tree.get_children())
+
+        cached_names = []
+        uncached_names = []
+        for name in DIGIMON_NAMES:
+            (cached_names if name in cache else uncached_names).append(name)
+
+        for name in cached_names:
+            d = cache[name]
+            values = (
+                name,
+                d.get("form", "---"),
+                d.get("hp", "---"),
+                d.get("ds", "---"),
+                d.get("at", "---"),
+                d.get("ct", "---"),
+                d.get("ht", "---"),
+                d.get("de", "---"),
+                str(d.get("level_cap", "---")),
+            )
+            self.list_tree.insert("", "end", text="", values=values, tags=("cached",))
+
+        for name in uncached_names:
+            values = (name,) + ("---",) * 8
+            self.list_tree.insert("", "end", text="", values=values, tags=("uncached",))
+
+        total = len(DIGIMON_NAMES)
+        cached = len(cached_names)
+        self.list_status_label.config(text=f"{cached}/{total} em cache")
+
+    def _sort_treeview(self, col, reverse):
+        items = []
+        for item in self.list_tree.get_children(""):
+            items.append((self.list_tree.set(item, col), item))
+
+        def sort_key(val):
+            s = val[0].strip().replace("%", "").replace(",", ".")
+            try:
+                return (1, float(s))
+            except ValueError:
+                return (0, s.lower())
+
+        items.sort(key=sort_key, reverse=reverse)
+        for index, (_, item) in enumerate(items):
+            self.list_tree.move(item, "", index)
+
+        self.list_tree.heading(col, command=lambda c=col: self._sort_treeview(c, not reverse))
+
+    def _refresh_list(self):
+        cache = _load_cache()
+        self._populate_list(cache)
+
     # ===================== CALCULADORA REVERSA =====================
     def _toggle_reverso_mode(self):
         mode = self.rev_mode.get()
@@ -1519,8 +1653,6 @@ class CalculadoraDMO:
         )
 
     def _open_html_folder(self):
-        global _MANUAL_HTML_NAMES
-        _MANUAL_HTML_NAMES = None
         os.makedirs(MANUAL_HTML_DIR, exist_ok=True)
         os.startfile(MANUAL_HTML_DIR)
 

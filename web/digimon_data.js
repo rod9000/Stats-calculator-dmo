@@ -1,4 +1,6 @@
-{
+// Auto-generated from digimon_stats_cache.json and digimon_list.json
+// ====== DIGIMON CACHE DATA ======
+const DIGIMON_CACHE = {
   "Agumon": {
     "form": "Rookie",
     "level_cap": 140,
@@ -847,7 +849,7 @@
     "ht_base": null,
     "de": "633",
     "de_base": "412",
-    "_cached_at": "2026-05-28T14:11:54.689423"
+    "_cached_at": "2026-05-28T11:10:16.195101"
   },
   "Omegamon Zwart": {
     "form": "Jogress",
@@ -1751,4 +1753,187 @@
     "de_base": "320",
     "_cached_at": "2026-05-27T17:00:46.427438"
   }
-}
+};
+
+// ====== DIGIMON NAMES ======
+const DIGIMON_NAMES = [
+  "Agumon",
+  "Agumon X",
+  "Alphamon",
+  "Alphamon Ouryuken",
+  "Alphamon Ouryuken (Awaken)",
+  "Alphamon Ouryuken (Extreme)",
+  "Alphamon Ouryuken X",
+  "Angemon",
+  "Angewomon",
+  "Angoramon",
+  "Barbamon",
+  "Beelzemon",
+  "Beelzemon (Blast Mode)",
+  "Beelzemon X",
+  "Belphemon (Rage Mode)",
+  "Betamon",
+  "Biyomon",
+  "Candlemon",
+  "Cherubimon",
+  "Craniamon",
+  "Creepymon",
+  "Daemon",
+  "DemiDevimon",
+  "DemiMeramon",
+  "Dokunemon",
+  "Dorumon",
+  "Duftmon",
+  "Dynasmon",
+  "Examon",
+  "Examon X",
+  "Falcomon",
+  "Frighmon",
+  "Fugamon",
+  "Gabumon",
+  "Gabumon X",
+  "Gallantmon",
+  "Gallantmon (Crimson Mode)",
+  "Gallantmon X",
+  "Gammamon",
+  "Gankoomon",
+  "Gaomon",
+  "Garurumon",
+  "Gazimon",
+  "Gizamon",
+  "Goblimon",
+  "Gomamon",
+  "Gotsumon",
+  "Greymon",
+  "Growlmon",
+  "Guilmon",
+  "Guilmon X",
+  "Hackmon",
+  "Hagurumon",
+  "Imperialdramon (Dragon Mode)",
+  "Imperialdramon (Fighter Mode)",
+  "Imperialdramon (Paladin Mode)",
+  "Impmon",
+  "Impmon",
+  "Jellymon",
+  "Jesmon",
+  "Jesmon X",
+  "Kokuwamon",
+  "Koromon",
+  "Kotemon",
+  "Kunemon",
+  "Kuzuhamon - Miko Mode",
+  "Kyuubimon",
+  "LadyDevimon",
+  "Lalamon",
+  "Leomon",
+  "Leviamon",
+  "Lilithmon",
+  "Lopmon",
+  "LordKnightmon",
+  "Lucemon",
+  "MagnaAngemon",
+  "Magnamon",
+  "Magnamon X",
+  "Mastemon",
+  "MetalGreymon",
+  "MirageGaogamon",
+  "Monodramon",
+  "Mushroomon",
+  "Omegamon",
+  "Omegamon Alter-B",
+  "Omegamon Alter-S",
+  "Omegamon X",
+  "Omegamon X Extreme",
+  "Omegamon Zwart",
+  "Ophanimon",
+  "Otamamon",
+  "Palmon",
+  "Palmon X",
+  "Patamon",
+  "Patamon X",
+  "Piyomon",
+  "Quantumon",
+  "Ravemon (Burst Mode)",
+  "Renamon",
+  "Renamon X",
+  "Rosemon",
+  "Salamon",
+  "Seraphimon",
+  "ShineGreymon",
+  "Shoutmon X7",
+  "Shoutmon X7 Superior Mode",
+  "Sleipmon",
+  "Tanemon",
+  "Tentomon",
+  "ToyAgumon",
+  "Tsukaimon",
+  "UlforceVeedramon",
+  "Veemon",
+  "WarGreymon",
+  "Wormmon"
+];
+
+// ====== CONSTANTS ======
+const STAT_KEYS = ["hp", "ds", "at", "ct", "ht", "de"];
+const STAT_LABELS = {"hp": "HP", "ds": "DS", "at": "AT", "ct": "CT(%)", "ht": "HT", "de": "DE"};
+
+const FLAT_CATEGORIES = ["Selos", "Chipset", "D-Unit", "Equipamentos", "Achievements", "Buff Tamer"];
+
+const WIKI_SIZE = 1.4;
+
+const EVO_OPTIONS = [
+  ["Rookie", 1.0],
+  ["Champion", 1.5],
+  ["Ultimate / Armor", 1.85],
+  ["Mega", 2.0],
+  ["Burst Mode / Side Mega", 2.5],
+  ["Jogress / Fusion", 3.0],
+];
+
+const EVO_DATA = {
+  "Rookie": 1.0,
+  "Champion": 1.5,
+  "Ultimate": 1.85,
+  "Armor": 1.85,
+  "Spirit": 1.85,
+  "Mega": 2.0,
+  "Burst Mode": 2.5,
+  "Side Mega": 2.5,
+  "Variant": 2.5,
+  "Jogress": 3.0,
+  "Fusion": 3.0,
+};
+
+const CLONE_DATA = [
+  [0, "0%", "0%", "0%", "0%", "0%"],
+  [1, "3%", "15%", "2%", "12%", "2%"],
+  [2, "6%", "30%", "4%", "24%", "4%"],
+  [3, "9%", "45%", "6%", "36%", "6%"],
+  [4, "14%", "70%", "9%", "56%", "9%"],
+  [5, "19%", "95%", "12%", "76%", "12%"],
+  [6, "24%", "120%", "15%", "96%", "15%"],
+  [7, "34%", "170%", "21%", "136%", "19%"],
+  [8, "44%", "220%", "27%", "176%", "23%"],
+  [9, "54%", "270%", "33%", "216%", "27%"],
+  [10, "69%", "345%", "42%", "276%", "31%"],
+  [11, "84%", "420%", "51%", "336%", "35%"],
+  [12, "99%", "495%", "60%", "396%", "39%"],
+  [13, "114%", "570%", "69%", "456%", "44%"],
+  [14, "129%", "645%", "78%", "516%", "49%"],
+  [15, "144%", "720%", "87%", "576%", "54%"],
+];
+
+const CLONE_NUM = CLONE_DATA.map(function(row) {
+  return [row[0], parseFloat(row[1])/100, parseFloat(row[2])/100,
+          parseFloat(row[3])/100, parseFloat(row[4])/100, parseFloat(row[5])/100];
+});
+
+const NAME_ALIASES = {
+  "alphamon ouryouken x extreme": "Alphamon Ouryuken (Extreme)",
+  "alphamon ouryuken x extreme": "Alphamon Ouryuken (Extreme)",
+  "alphamon ouryouken extreme": "Alphamon Ouryuken (Extreme)",
+  "alphamon ouryuken extreme": "Alphamon Ouryuken (Extreme)",
+  "alphamon ouryouken awaken": "Alphamon Ouryuken (Awaken)",
+  "alphamon ouryuken awaken": "Alphamon Ouryuken (Awaken)",
+};

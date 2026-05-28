@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digimon Master Online - Calculadora</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-card">
+<div class="header">
+  <button class="theme-toggle" id="themeToggle">Modo Escuro</button>
+  <h1>Digimon Master Online</h1>
+  <div class="sub">Calculadora de Status</div>
+</div>
+
+<div class="tabs-nav">
+  <button class="tab-btn active" data-tab="calculadora">Calculadora</button>
+  <button class="tab-btn" data-tab="reversa">Calculadora Reversa</button>
+  <button class="tab-btn" data-tab="comparacao">Compara&ccedil;&atilde;o</button>
+  <button class="tab-btn" data-tab="lista">Lista de Digimons</button>
+</div>
+
+<!-- ===================== TAB 1: CALCULADORA ===================== -->
+<div class="tab-content active" id="tab-calculadora">
+
+  <div class="card">
+    <div class="card-title">Buscar Digimon</div>
+    <div class="search-bar autocomplete-wrap">
+      <input type="text" id="calcSearch" placeholder="Nome do Digimon..." autocomplete="off">
+      <div class="autocomplete-list" id="calcAutoList"></div>
+      <button class="btn-buscar" id="calcBuscarBtn">Buscar</button>
+      <span id="calcStatus"></span>
+    </div>
+  </div>
+
+  <!-- Mode -->
+  <div class="card">
+    <div class="card-title">Base Stat</div>
+    <div class="form-row">
+      <label><input type="radio" name="calc-mode" value="simples" checked> Simples</label>
+      <label><input type="radio" name="calc-mode" value="nivel"> Por N&iacute;vel</label>
+    </div>
+
+    <!-- SIMPLES -->
+    <div id="simple-fields">
+      <div class="form-row">
+        <label>Size:</label>
+        <input type="number" id="sSize" value="1.4" step="0.1" min="0.5" max="2.5">
+      </div>
+      <div class="stats-grid" style="grid-template-columns:80px repeat(6,1fr) 80px;">
+        <div></div>
+        <div class="header-cell">HP</div>
+        <div class="header-cell">DS</div>
+        <div class="header-cell">AT</div>
+        <div class="header-cell">CT(%)</div>
+        <div class="header-cell">HT</div>
+        <div class="header-cell">DE</div>
+        <div></div>
+        <div class="label-cell">Base</div>
+        <div><input type="number" id="sBase-hp" step="1"></div>
+        <div><input type="number" id="sBase-ds" step="1"></div>
+        <div><input type="number" id="sBase-at" step="1"></div>
+        <div><input type="number" id="sBase-ct" step="0.01"></div>
+        <div><input type="number" id="sBase-ht" step="1"></div>
+        <div><input type="number" id="sBase-de" step="1"></div>
+        <div></div>
+        <div class="label-cell">Adicional</div>
+        <div><input type="number" id="sAdic-hp" step="1"></div>
+        <div><input type="number" id="sAdic-ds" step="1"></div>
+        <div><input type="number" id="sAdic-at" step="1"></div>
+        <div><input type="number" id="sAdic-ct" step="0.01"></div>
+        <div><input type="number" id="sAdic-ht" step="1"></div>
+        <div><input type="number" id="sAdic-de" step="1"></div>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- NIVEL -->
+    <div id="nivel-fields" style="display:none;">
+      <div class="form-row">
+        <label>Level:</label>
+        <input type="number" id="nLevel" value="140" min="1" max="200">
+        <label>Evo:</label>
+        <select id="evoSelect"></select>
+        <label>Size:</label>
+        <input type="number" id="nSize" value="1.4" step="0.1" min="0.5" max="2.5">
+      </div>
+      <div class="stats-grid" style="grid-template-columns:80px repeat(6,1fr) 80px;">
+        <div></div><div class="header-cell">HP</div><div class="header-cell">DS</div>
+        <div class="header-cell">AT</div><div class="header-cell">CT(%)</div>
+        <div class="header-cell">HT</div><div class="header-cell">DE</div><div></div>
+        <div class="label-cell">Base Lv1</div>
+        <div><input type="number" id="nBase-hp" step="1"></div>
+        <div><input type="number" id="nBase-ds" step="1"></div>
+        <div><input type="number" id="nBase-at" step="1"></div>
+        <div><input type="number" id="nBase-ct" step="0.01"></div>
+        <div><input type="number" id="nBase-ht" step="1"></div>
+        <div><input type="number" id="nBase-de" step="1"></div>
+        <div></div>
+        <div class="label-cell">Growth/Lv</div>
+        <div><input type="number" id="nGrowth-hp" step="0.001"></div>
+        <div><input type="number" id="nGrowth-ds" step="0.001"></div>
+        <div><input type="number" id="nGrowth-at" step="0.001"></div>
+        <div><input type="number" id="nGrowth-ct" step="0.001"></div>
+        <div><input type="number" id="nGrowth-ht" step="0.001"></div>
+        <div><input type="number" id="nGrowth-de" step="0.001"></div>
+        <div></div>
+        <div class="label-cell">Final</div>
+        <div id="nFinal-hp">-</div><div id="nFinal-ds">-</div>
+        <div id="nFinal-at">-</div><div id="nFinal-ct">-</div>
+        <div id="nFinal-ht">-</div><div id="nFinal-de">-</div>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clone -->
+  <div class="card">
+    <div class="card-title">Clone</div>
+    <div class="form-row">
+      <label>N&iacute;vel do Clone:</label>
+      <select id="cloneLevel">
+        <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+        <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+        <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+        <option value="9">9</option><option value="10">10</option><option value="11">11</option>
+        <option value="12">12</option><option value="13">13</option><option value="14">14</option>
+        <option value="15" selected>15</option>
+      </select>
+      <span class="card-hint" style="margin:0;">AT = x{at} | CT = x{ct} | HP = x{hp}</span>
+    </div>
+  </div>
+
+  <!-- Flat Bonuses -->
+  <div class="card">
+    <div class="card-title">Flat Bonuses</div>
+    <div class="card-hint">Selos, Chipset, D-Unit, Equipamentos, Achievements, Buff Tamer</div>
+    <div class="stats-grid" id="flatGrid" style="grid-template-columns:100px repeat(6,1fr);">
+      <div></div>
+      <div class="header-cell">HP</div><div class="header-cell">DS</div>
+      <div class="header-cell">AT</div><div class="header-cell">CT(%)</div>
+      <div class="header-cell">HT</div><div class="header-cell">DE</div>
+    </div>
+  </div>
+
+  <!-- Calculate -->
+  <button class="btn-buscar" id="calcularBtn" style="font-size:15px;padding:8px 30px;margin:4px 0;">
+    Calcular
+  </button>
+  <span class="card-hint" style="margin-left:12px;">Ctrl+Enter</span>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="card-title">Resultado Final</div>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Stat</th><th>Base</th><th>+/Lv</th><th>Clone (x)</th><th>Clone (+)</th><th>Flat</th><th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="stat-label" id="resLabel-hp">HP</td>
+          <td id="resBase-hp">-</td><td id="resGain-hp">-</td>
+          <td id="resCloneX-hp">-</td><td id="resCloneAdd-hp">-</td>
+          <td id="resFlat-hp">-</td><td id="resTotal-hp">-</td>
+        </tr>
+        <tr><td class="stat-label" id="resLabel-ds">DS</td>
+          <td id="resBase-ds">-</td><td id="resGain-ds">-</td>
+          <td id="resCloneX-ds">-</td><td id="resCloneAdd-ds">-</td>
+          <td id="resFlat-ds">-</td><td id="resTotal-ds">-</td>
+        </tr>
+        <tr><td class="stat-label" id="resLabel-at">AT</td>
+          <td id="resBase-at">-</td><td id="resGain-at">-</td>
+          <td id="resCloneX-at">-</td><td id="resCloneAdd-at">-</td>
+          <td id="resFlat-at">-</td><td id="resTotal-at">-</td>
+        </tr>
+        <tr><td class="stat-label" id="resLabel-ct">CT(%)</td>
+          <td id="resBase-ct">-</td><td id="resGain-ct">-</td>
+          <td id="resCloneX-ct">-</td><td id="resCloneAdd-ct">-</td>
+          <td id="resFlat-ct">-</td><td id="resTotal-ct">-</td>
+        </tr>
+        <tr><td class="stat-label" id="resLabel-ht">HT</td>
+          <td id="resBase-ht">-</td><td id="resGain-ht">-</td>
+          <td id="resCloneX-ht">-</td><td id="resCloneAdd-ht">-</td>
+          <td id="resFlat-ht">-</td><td id="resTotal-ht">-</td>
+        </tr>
+        <tr><td class="stat-label" id="resLabel-de">DE</td>
+          <td id="resBase-de">-</td><td id="resGain-de">-</td>
+          <td id="resCloneX-de">-</td><td id="resCloneAdd-de">-</td>
+          <td id="resFlat-de">-</td><td id="resTotal-de">-</td>
+        </tr>
+        <tr class="total-row"><td colspan="7" id="totalLine" style="text-align:left;padding:8px;">-</td></tr>
+      </tbody>
+    </table>
+    <button class="copy-btn" onclick="copyResults()">Copiar</button>
+  </div>
+
+</div>
+
+<!-- ===================== TAB 2: CALCULADORA REVERSA ===================== -->
+<div class="tab-content" id="tab-reversa">
+
+  <div class="card">
+    <div class="card-title">Calculadora Reversa</div>
+    <div class="card-hint">Descubra Base Lv1 e Growth/Lv a partir de valores conhecidos.</div>
+
+    <div class="form-row">
+      <label>Modo:</label>
+      <label><input type="radio" name="rev-mode" value="2p" checked> Descobridor (2 pontos)</label>
+      <label><input type="radio" name="rev-mode" value="1p"> Verificador (1 ponto + Base)</label>
+    </div>
+
+    <div class="form-row">
+      <label>Stat:</label>
+      <select id="revStat"></select>
+      <label>Evo:</label>
+      <select id="revEvo"></select>
+    </div>
+
+    <!-- 2 pontos -->
+    <div id="revPoint2">
+      <div class="card-hint">Ponto 1</div>
+      <div class="form-row">
+        <label>Level:</label><input type="number" id="revL1" value="1" min="1">
+        <label>Size:</label><input type="number" id="revS1" value="1.4" step="0.1">
+        <label>Total:</label><input type="number" id="revT1" step="1">
+      </div>
+      <div class="card-hint">Ponto 2</div>
+      <div class="form-row">
+        <label>Level:</label><input type="number" id="revL2" value="140" min="1">
+        <label>Size:</label><input type="number" id="revS2" value="1.4" step="0.1">
+        <label>Total:</label><input type="number" id="revT2" step="1">
+      </div>
+    </div>
+
+    <!-- 1 ponto + Base -->
+    <div id="revBase1" style="display:none;">
+      <div class="form-row">
+        <label>Level:</label><input type="number" id="revL1v" value="140" min="1">
+        <label>Size:</label><input type="number" id="revS1v" value="1.4" step="0.1">
+        <label>Total:</label><input type="number" id="revT1v" step="1">
+      </div>
+      <div class="form-row">
+        <label>Base Lv1:</label><input type="number" id="revBaseVal" step="1">
+      </div>
+    </div>
+
+    <button class="btn-buscar" id="calcularReversoBtn">Calcular Reverso</button>
+    <div class="rev-result" id="revResult"></div>
+  </div>
+
+</div>
+
+<!-- ===================== TAB 3: COMPARAÇÃO ===================== -->
+<div class="tab-content" id="tab-comparacao">
+
+  <div class="card" style="padding:10px 16px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-weight:700;color:var(--accent);font-size:15px;">Compara&ccedil;&atilde;o de Digimons</span>
+      <span class="card-hint" style="margin:0;">Dois cards por linha, busca direta no cache.</span>
+      <button class="btn-buscar" id="addCompareBtn" style="margin-left:auto;">+</button>
+    </div>
+  </div>
+
+  <div class="compare-grid" id="compareContainer"></div>
+
+</div>
+
+<!-- ===================== TAB 4: LISTA DE DIGIMONS ===================== -->
+<div class="tab-content" id="tab-lista">
+
+  <div class="card" style="padding:10px 16px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-weight:700;color:var(--accent);font-size:15px;">Lista de Digimons</span>
+      <span style="color:var(--sub-fg);font-size:12px;" id="listStatus"></span>
+      <button class="btn-buscar" id="refreshListBtn" style="margin-left:auto;">&#x27F3; Atualizar</button>
+    </div>
+  </div>
+
+  <div class="list-table-wrap">
+    <table class="list-table" id="listTable">
+      <thead>
+        <tr>
+          <th>Nome</th><th>Forma</th><th>HP</th><th>DS</th><th>AT</th>
+          <th>CT(%)</th><th>HT</th><th>DE</th><th>Lv Cap</th>
+        </tr>
+      </thead>
+      <tbody id="listBody"></tbody>
+    </table>
+  </div>
+
+</div> <!-- /app-card -->
+
+<script src="digimon_data.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

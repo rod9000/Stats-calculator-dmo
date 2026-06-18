@@ -21,6 +21,8 @@
   <button class="tab-btn" data-tab="comparacao">Compara&ccedil;&atilde;o</button>
   <button class="tab-btn" data-tab="lista">Lista de Digimons</button>
   <button class="tab-btn" data-tab="seals">Seals</button>
+  <button class="tab-btn" data-tab="dgcalc">DG Calculator</button>
+  <button class="tab-btn" data-tab="dunit">D-Unit</button>
 </div>
 
 <!-- ===================== TAB 1: CALCULADORA ===================== -->
@@ -320,6 +322,9 @@
       <div class="form-row">
         <input type="text" id="sealSearch" placeholder="Search seal names..." style="flex:1;min-width:150px;">
         <label><input type="checkbox" id="sealOwnedOnly"> Owned only</label>
+        <button class="btn-buscar" id="sealExportBtn" style="font-size:12px;padding:5px 10px;">Exportar .json</button>
+        <button class="btn-buscar" id="sealImportBtn" style="font-size:12px;padding:5px 10px;">Carregar .json</button>
+        <input type="file" id="sealImportFile" accept=".json" style="display:none;">
       </div>
       <div class="list-table-wrap">
         <table class="list-table" id="sealTable">
@@ -339,6 +344,132 @@
     </div>
   </div>
 
+</div>
+
+<!-- ===================== TAB 6: DG CALCULATOR ===================== -->
+<div class="tab-content" id="tab-dgcalc">
+  <div class="dgcalc-layout">
+    <div class="dgcalc-left">
+      <div class="dgcalc-heading">
+        <h2>Dungeon Checker</h2>
+        <p class="dgcalc-subtitle">Insira os stats do seu Digimon &mdash; a diferen&ccedil;a de n&iacute;vel &eacute; aplicada automaticamente.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Seus Stats</div>
+        <div class="dgcalc-fields">
+          <div class="dgcalc-field">
+            <label for="dg-level">N&iacute;vel <span class="dgcalc-badge">1&ndash;180</span></label>
+            <input type="number" id="dg-level" min="1" max="180" placeholder="150" inputmode="numeric">
+            <span class="dgcalc-hint">N&iacute;vel atual do seu Digimon</span>
+          </div>
+          <div class="dgcalc-field">
+            <label for="dg-ct">Critical Rate <span class="dgcalc-badge">CT</span></label>
+            <input type="number" id="dg-ct" min="0" max="99999" placeholder="ex: 400" inputmode="numeric">
+            <span class="dgcalc-hint">Janela de status do Digimon</span>
+          </div>
+          <div class="dgcalc-field">
+            <label for="dg-ht">Hit Rate <span class="dgcalc-badge">HT</span></label>
+            <input type="number" id="dg-ht" min="0" max="999999" placeholder="ex: 17000" inputmode="numeric">
+            <span class="dgcalc-hint">Janela de status do Digimon</span>
+          </div>
+        </div>
+      </div>
+      <div class="dgcalc-chips" id="dgChips" style="display:none;">
+        <div class="dgcalc-chip"><span class="dgcalc-chip-label">N&iacute;vel</span><span class="dgcalc-chip-val" id="dgChipLv">-</span></div>
+        <div class="dgcalc-chip"><span class="dgcalc-chip-label">CT</span><span class="dgcalc-chip-val" id="dgChipCt">-</span></div>
+        <div class="dgcalc-chip"><span class="dgcalc-chip-label">HT</span><span class="dgcalc-chip-val" id="dgChipHt">-</span></div>
+      </div>
+      <div class="dgcalc-counters" id="dgCounters" style="display:none;">
+        <span class="dgcalc-pill" data-type="ready"><span class="dgcalc-pill-icon">&#10003;</span><span id="dgReady">0</span> Pronto</span>
+        <span class="dgcalc-pill" data-type="close"><span class="dgcalc-pill-icon">&#9888;</span><span id="dgClose">0</span> Quase</span>
+        <span class="dgcalc-pill" data-type="not-ready"><span class="dgcalc-pill-icon">&#10007;</span><span id="dgNotReady">0</span> N&atilde;o Pronto</span>
+      </div>
+      <div class="dgcalc-disclaimer">&#9432; <strong>Dados da comunidade.</strong> Limite verificado via Holy Guardians. Verifique in-game ap&oacute;s patches.</div>
+    </div>
+    <div class="dgcalc-right">
+      <div class="dgcalc-section-header">
+        <h3>Dungeons Endgame</h3>
+        <span id="dgDungeonCount">7 dungeons</span>
+      </div>
+      <div class="dgcalc-empty" id="dgEmpty">
+        <div class="dgcalc-empty-icon">&#9878;</div>
+        <p class="dgcalc-empty-title">Insira seus stats para come&ccedil;ar</p>
+        <p class="dgcalc-empty-text">Preencha N&iacute;vel, CT e HT na esquerda para ver quais dungeons voc&ecirc; est&aacute; pronto. Resultados atualizam em tempo real.</p>
+      </div>
+      <div class="dgcalc-grid" id="dgGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB 7: D-UNIT ORGANIZER ===================== -->
+<div class="tab-content" id="tab-dunit">
+  <div class="dunit-layout">
+    <div class="dunit-left">
+      <div class="card">
+        <div class="card-title">Progresso D-Unit</div>
+        <div class="dunit-progress-ring" id="dunitRing">
+          <svg viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="60" fill="none" stroke="var(--border)" stroke-width="8"/>
+            <circle cx="70" cy="70" r="60" fill="none" stroke="var(--accent)" stroke-width="8" stroke-dasharray="377" stroke-dashoffset="377" stroke-linecap="round" transform="rotate(-90 70 70)" id="dunitRingFill"/>
+          </svg>
+          <div class="dunit-ring-text">
+            <span class="dunit-ring-count" id="dunitRingCount">0</span>
+            <span class="dunit-ring-label">/ 32</span>
+          </div>
+        </div>
+        <div class="dunit-rank-info">
+          <div class="dunit-rank-current">
+            <span class="dunit-rank-badge" id="dunitRankBadge" style="background:#4a5568;color:#e2e8f0;">Unranked</span>
+          </div>
+          <div class="dunit-rank-next" id="dunitRankNext"></div>
+        </div>
+        <div class="dunit-segment-bar">
+          <div class="dunit-segment-fill" id="dunitSegmentFill" style="width:0%"></div>
+        </div>
+        <div class="dunit-stats-accumulated" id="dunitStatsAccum"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recompensas por Tier</div>
+        <div class="dunit-tier-list" id="dunitTierList"></div>
+      </div>
+    </div>
+    <div class="dunit-right">
+      <div class="dunit-toolbar">
+        <input type="text" id="dunitSearch" placeholder="Buscar familia..." class="dunit-search">
+        <select id="dunitStatFilter" class="dunit-stat-select">
+          <option value="">Todas as stats</option>
+          <option value="HP">HP</option>
+          <option value="DS">DS</option>
+          <option value="AT">AT</option>
+          <option value="CT">CT</option>
+          <option value="HT">HT</option>
+          <option value="DE">DE</option>
+          <option value="EV">EV</option>
+          <option value="BL">BL</option>
+          <option value="SCD_percent">SCD %</option>
+          <option value="EXP_percent">EXP %</option>
+          <option value="fire_skill_damage_percent">Fire SCD</option>
+          <option value="water_skill_damage_percent">Water SCD</option>
+          <option value="ice_skill_damage_percent">Ice SCD</option>
+          <option value="wood_skill_damage_percent">Wood SCD</option>
+          <option value="light_skill_damage_percent">Light SCD</option>
+          <option value="dark_skill_damage_percent">Dark SCD</option>
+          <option value="electric_skill_damage_percent">Elec SCD</option>
+          <option value="wind_skill_damage_percent">Wind SCD</option>
+          <option value="steel_skill_damage_percent">Steel SCD</option>
+          <option value="vaccine_skill_damage_percent">Vaccine SCD</option>
+          <option value="virus_skill_damage_percent">Virus SCD</option>
+          <option value="data_skill_damage_percent">Data SCD</option>
+        </select>
+        <div class="dunit-filters">
+          <button class="dunit-filter-btn active" data-filter="all">Todos</button>
+          <button class="dunit-filter-btn" data-filter="pending">Pendentes</button>
+          <button class="dunit-filter-btn" data-filter="done">Completados</button>
+        </div>
+      </div>
+      <div class="dunit-grid" id="dunitGrid"></div>
+    </div>
+  </div>
 </div>
 
 <script src="digimon_data.js"></script>

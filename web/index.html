@@ -8,56 +8,64 @@
 </head>
 <body>
 
+<div class="lang-widget" id="langWidget">
+  <button class="lang-btn active" data-lang="pt">PT</button>
+  <button class="lang-btn" data-lang="en">EN</button>
+  <button class="lang-btn" data-lang="es">ES</button>
+</div>
+
 <div class="app-card">
 <div class="header">
-  <button class="theme-toggle" id="themeToggle">Modo Escuro</button>
-  <h1>Digimon Master Online</h1>
-  <div class="sub">Calculadora de Status</div>
+  <div class="header-top">
+    <button class="theme-toggle" id="themeToggle" data-i18n="themeDark">Modo Escuro</button>
+  </div>
+  <h1 data-i18n="h1">Digimon Master Online</h1>
+  <div class="sub" data-i18n="sub">Calculadora de Status</div>
 </div>
 
 <div class="tabs-nav">
-  <button class="tab-btn active" data-tab="calculadora">Calculadora</button>
-  <button class="tab-btn" data-tab="reversa">Calculadora Reversa</button>
-  <button class="tab-btn" data-tab="comparacao">Compara&ccedil;&atilde;o</button>
-  <button class="tab-btn" data-tab="lista">Lista de Digimons</button>
-  <button class="tab-btn" data-tab="seals">Seals</button>
-  <button class="tab-btn" data-tab="dgcalc">DG Calculator</button>
-  <button class="tab-btn" data-tab="dunit">D-Unit</button>
+  <button class="tab-btn active" data-tab="calculadora" data-i18n="tabCalc">Calculadora</button>
+  <button class="tab-btn" data-tab="reversa" data-i18n="tabReverse">Calculadora Reversa</button>
+  <button class="tab-btn" data-tab="comparacao" data-i18n="tabCompare">Compara&ccedil;&atilde;o</button>
+  <button class="tab-btn" data-tab="lista" data-i18n="tabList">Lista de Digimons</button>
+  <button class="tab-btn" data-tab="seals" data-i18n="tabSeals">Seals</button>
+  <button class="tab-btn" data-tab="dgcalc" data-i18n="tabDg">DG Calculator</button>
+  <button class="tab-btn" data-tab="dunit" data-i18n="tabDunit">D-Unit</button>
 </div>
 
 <!-- ===================== TAB 1: CALCULADORA ===================== -->
 <div class="tab-content active" id="tab-calculadora">
 
   <div class="card">
-    <div class="card-title">Buscar Digimon</div>
+    <div class="card-title" data-i18n="searchDigimon">Buscar Digimon</div>
     <div class="search-bar autocomplete-wrap">
-      <input type="text" id="calcSearch" placeholder="Nome do Digimon..." autocomplete="off">
+      <input type="text" id="calcSearch" placeholder="Nome do Digimon..." autocomplete="off" data-i18n="placeholder:searchPlaceholder">
       <div class="autocomplete-list" id="calcAutoList"></div>
-      <button class="btn-buscar" id="calcBuscarBtn">Buscar</button>
+      <button class="btn-buscar" id="calcBuscarBtn" data-i18n="buscar">Buscar</button>
       <span id="calcStatus"></span>
     </div>
   </div>
 
   <!-- Mode -->
   <div class="card">
-    <div class="card-title">Base Stat</div>
+    <div class="card-title" data-i18n="baseStat">Base Stat</div>
     <div class="form-row">
-      <label><input type="radio" name="calc-mode" value="simples" checked> Simples</label>
-      <label><input type="radio" name="calc-mode" value="nivel"> Por N&iacute;vel</label>
+      <label><input type="radio" name="calc-mode" value="simples" checked> <span data-i18n="simples">Simples</span></label>
+      <label><input type="radio" name="calc-mode" value="nivel"> <span data-i18n="porNivel">Por N&iacute;vel</span></label>
     </div>
 
     <!-- SIMPLES -->
     <div id="simple-fields">
       <div class="stats-grid" style="grid-template-columns:80px repeat(6,1fr) 80px;">
         <div></div>
-        <div class="header-cell">HP</div>
-        <div class="header-cell">DS</div>
-        <div class="header-cell">AT</div>
-        <div class="header-cell">CT(%)</div>
-        <div class="header-cell">HT</div>
-        <div class="header-cell">DE</div>
+        <div class="header-cell" data-i18n="hp">HP</div>
+        <div class="header-cell" data-i18n="ds">DS</div>
+        <div class="header-cell" data-i18n="at">AT</div>
+        <div class="header-cell" data-i18n="ct">CT(%)</div>
+        <div class="header-cell" data-i18n="ht">HT</div>
+        <div class="header-cell" data-i18n="de">DE</div>
         <div></div>
-        <div class="label-cell">Base</div>
+        <div class="label-cell" data-i18n="base">Base</div>
         <div><input type="number" id="sBase-hp" step="1"></div>
         <div><input type="number" id="sBase-ds" step="1"></div>
         <div><input type="number" id="sBase-at" step="1"></div>
@@ -65,7 +73,7 @@
         <div><input type="number" id="sBase-ht" step="1"></div>
         <div><input type="number" id="sBase-de" step="1"></div>
         <div></div>
-        <div class="label-cell">Adicional</div>
+        <div class="label-cell" data-i18n="adicional">Adicional</div>
         <div><input type="number" id="sAdic-hp" step="1"></div>
         <div><input type="number" id="sAdic-ds" step="1"></div>
         <div><input type="number" id="sAdic-at" step="1"></div>
@@ -79,18 +87,18 @@
     <!-- NIVEL -->
     <div id="nivel-fields" style="display:none;">
       <div class="form-row">
-        <label>Level:</label>
+        <label data-i18n="level">Level:</label>
         <input type="number" id="nLevel" value="140" min="1" max="200">
-        <label>Evo:</label>
+        <label data-i18n="evo">Evo:</label>
         <select id="evoSelect"></select>
-        <label>Size:</label>
+        <label data-i18n="size">Size:</label>
         <input type="number" id="nSize" value="1.4" step="0.1" min="0.5" max="2.5">
       </div>
       <div class="stats-grid" style="grid-template-columns:80px repeat(6,1fr) 80px;">
-        <div></div><div class="header-cell">HP</div><div class="header-cell">DS</div>
-        <div class="header-cell">AT</div><div class="header-cell">CT(%)</div>
-        <div class="header-cell">HT</div><div class="header-cell">DE</div><div></div>
-        <div class="label-cell">Base Lv1</div>
+        <div></div><div class="header-cell" data-i18n="hp">HP</div><div class="header-cell" data-i18n="ds">DS</div>
+        <div class="header-cell" data-i18n="at">AT</div><div class="header-cell" data-i18n="ct">CT(%)</div>
+        <div class="header-cell" data-i18n="ht">HT</div><div class="header-cell" data-i18n="de">DE</div><div></div>
+        <div class="label-cell" data-i18n="baseLv1">Base Lv1</div>
         <div><input type="number" id="nBase-hp" step="1"></div>
         <div><input type="number" id="nBase-ds" step="1"></div>
         <div><input type="number" id="nBase-at" step="1"></div>
@@ -98,7 +106,7 @@
         <div><input type="number" id="nBase-ht" step="1"></div>
         <div><input type="number" id="nBase-de" step="1"></div>
         <div></div>
-        <div class="label-cell">Growth/Lv</div>
+        <div class="label-cell" data-i18n="growthLv">Growth/Lv</div>
         <div><input type="number" id="nGrowth-hp" step="0.001"></div>
         <div><input type="number" id="nGrowth-ds" step="0.001"></div>
         <div><input type="number" id="nGrowth-at" step="0.001"></div>
@@ -106,7 +114,7 @@
         <div><input type="number" id="nGrowth-ht" step="0.001"></div>
         <div><input type="number" id="nGrowth-de" step="0.001"></div>
         <div></div>
-        <div class="label-cell">Final</div>
+        <div class="label-cell" data-i18n="final">Final</div>
         <div id="nFinal-hp">-</div><div id="nFinal-ds">-</div>
         <div id="nFinal-at">-</div><div id="nFinal-ct">-</div>
         <div id="nFinal-ht">-</div><div id="nFinal-de">-</div>
@@ -117,9 +125,9 @@
 
   <!-- Clone -->
   <div class="card">
-    <div class="card-title">Clone</div>
+    <div class="card-title" data-i18n="clone">Clone</div>
     <div class="form-row">
-      <label>N&iacute;vel do Clone:</label>
+      <label data-i18n="cloneLevel">N&iacute;vel do Clone:</label>
       <select id="cloneLevel">
         <option value="0">0</option><option value="1">1</option><option value="2">2</option>
         <option value="3">3</option><option value="4">4</option><option value="5">5</option>
@@ -134,8 +142,8 @@
 
   <!-- Flat Bonuses -->
   <div class="card">
-    <div class="card-title">Flat Bonuses</div>
-    <div class="card-hint">Selos, Chipset, D-Unit, Equipamentos, Achievements, Buff Tamer</div>
+    <div class="card-title" data-i18n="flatBonuses">Flat Bonuses</div>
+    <div class="card-hint" data-i18n="flatHint">Selos, Chipset, D-Unit, Equipamentos, Achievements, Buff Tamer</div>
     <div class="stats-grid" id="flatGrid" style="grid-template-columns:100px repeat(6,1fr);">
       <div></div>
       <div class="header-cell">HP</div><div class="header-cell">DS</div>
@@ -145,18 +153,18 @@
   </div>
 
   <!-- Calculate -->
-  <button class="btn-buscar" id="calcularBtn" style="font-size:15px;padding:8px 30px;margin:4px 0;">
+  <button class="btn-buscar" id="calcularBtn" style="font-size:15px;padding:8px 30px;margin:4px 0;" data-i18n="calcular">
     Calcular
   </button>
-  <span class="card-hint" style="margin-left:12px;">Ctrl+Enter</span>
+  <span class="card-hint" style="margin-left:12px;" data-i18n="ctrlEnter">Ctrl+Enter</span>
 
   <!-- Results -->
   <div class="card">
-    <div class="card-title">Resultado Final</div>
+    <div class="card-title" data-i18n="resultadoFinal">Resultado Final</div>
     <table class="result-table">
       <thead>
         <tr>
-          <th>Stat</th><th>Base</th><th>+/Lv</th><th>Clone (x)</th><th>Clone (+)</th><th>Flat</th><th>Total</th>
+          <th data-i18n="stat">Stat</th><th data-i18n="baseCol">Base</th><th data-i18n="perLv">+/Lv</th><th data-i18n="cloneX">Clone (x)</th><th data-i18n="cloneAdd">Clone (+)</th><th data-i18n="flat">Flat</th><th data-i18n="total">Total</th>
         </tr>
       </thead>
       <tbody>
@@ -193,7 +201,7 @@
         <tr class="total-row"><td colspan="7" id="totalLine" style="text-align:left;padding:8px;">-</td></tr>
       </tbody>
     </table>
-    <button class="copy-btn" onclick="copyResults()">Copiar</button>
+    <button class="copy-btn" onclick="copyResults()" data-i18n="copiar">Copiar</button>
   </div>
 
 </div>
@@ -202,51 +210,51 @@
 <div class="tab-content" id="tab-reversa">
 
   <div class="card">
-    <div class="card-title">Calculadora Reversa</div>
-    <div class="card-hint">Descubra Base Lv1 e Growth/Lv a partir de valores conhecidos.</div>
+    <div class="card-title" data-i18n="calcReverse">Calculadora Reversa</div>
+    <div class="card-hint" data-i18n="revHint">Descubra Base Lv1 e Growth/Lv a partir de valores conhecidos.</div>
 
     <div class="form-row">
-      <label>Modo:</label>
-      <label><input type="radio" name="rev-mode" value="2p" checked> Descobridor (2 pontos)</label>
-      <label><input type="radio" name="rev-mode" value="1p"> Verificador (1 ponto + Base)</label>
+      <label data-i18n="modo">Modo:</label>
+      <label><input type="radio" name="rev-mode" value="2p" checked> <span data-i18n="rev2p">Descobridor (2 pontos)</span></label>
+      <label><input type="radio" name="rev-mode" value="1p"> <span data-i18n="rev1p">Verificador (1 ponto + Base)</span></label>
     </div>
 
     <div class="form-row">
-      <label>Stat:</label>
+      <label data-i18n="statLabel">Stat:</label>
       <select id="revStat"></select>
-      <label>Evo:</label>
+      <label data-i18n="evoLabel">Evo:</label>
       <select id="revEvo"></select>
     </div>
 
     <!-- 2 pontos -->
     <div id="revPoint2">
-      <div class="card-hint">Ponto 1</div>
+      <div class="card-hint" data-i18n="ponto1">Ponto 1</div>
       <div class="form-row">
-        <label>Level:</label><input type="number" id="revL1" value="1" min="1">
-        <label>Size:</label><input type="number" id="revS1" value="1.4" step="0.1">
-        <label>Total:</label><input type="number" id="revT1" step="1">
+        <label data-i18n="level">Level:</label><input type="number" id="revL1" value="1" min="1">
+        <label data-i18n="size">Size:</label><input type="number" id="revS1" value="1.4" step="0.1">
+        <label data-i18n="totalLabel">Total:</label><input type="number" id="revT1" step="1">
       </div>
-      <div class="card-hint">Ponto 2</div>
+      <div class="card-hint" data-i18n="ponto2">Ponto 2</div>
       <div class="form-row">
-        <label>Level:</label><input type="number" id="revL2" value="140" min="1">
-        <label>Size:</label><input type="number" id="revS2" value="1.4" step="0.1">
-        <label>Total:</label><input type="number" id="revT2" step="1">
+        <label data-i18n="level">Level:</label><input type="number" id="revL2" value="140" min="1">
+        <label data-i18n="size">Size:</label><input type="number" id="revS2" value="1.4" step="0.1">
+        <label data-i18n="totalLabel">Total:</label><input type="number" id="revT2" step="1">
       </div>
     </div>
 
     <!-- 1 ponto + Base -->
     <div id="revBase1" style="display:none;">
       <div class="form-row">
-        <label>Level:</label><input type="number" id="revL1v" value="140" min="1">
-        <label>Size:</label><input type="number" id="revS1v" value="1.4" step="0.1">
-        <label>Total:</label><input type="number" id="revT1v" step="1">
+        <label data-i18n="level">Level:</label><input type="number" id="revL1v" value="140" min="1">
+        <label data-i18n="size">Size:</label><input type="number" id="revS1v" value="1.4" step="0.1">
+        <label data-i18n="totalLabel">Total:</label><input type="number" id="revT1v" step="1">
       </div>
       <div class="form-row">
-        <label>Base Lv1:</label><input type="number" id="revBaseVal" step="1">
+        <label data-i18n="baseLv1">Base Lv1:</label><input type="number" id="revBaseVal" step="1">
       </div>
     </div>
 
-    <button class="btn-buscar" id="calcularReversoBtn">Calcular Reverso</button>
+    <button class="btn-buscar" id="calcularReversoBtn" data-i18n="calcularReverso">Calcular Reverso</button>
     <div class="rev-result" id="revResult"></div>
   </div>
 
@@ -257,8 +265,8 @@
 
   <div class="card" style="padding:10px 16px;">
     <div style="display:flex;align-items:center;gap:12px;">
-      <span style="font-weight:700;color:var(--accent);font-size:15px;">Compara&ccedil;&atilde;o de Digimons</span>
-      <span class="card-hint" style="margin:0;">Dois cards por linha, busca direta no cache.</span>
+      <span style="font-weight:700;color:var(--accent);font-size:15px;" data-i18n="compareTitle">Compara&ccedil;&atilde;o de Digimons</span>
+      <span class="card-hint" style="margin:0;" data-i18n="compareHint">Dois cards por linha, busca direta no cache.</span>
       <button class="btn-buscar" id="addCompareBtn" style="margin-left:auto;">+</button>
     </div>
   </div>
@@ -272,9 +280,9 @@
 
   <div class="card" style="padding:10px 16px;">
     <div style="display:flex;align-items:center;gap:12px;">
-      <span style="font-weight:700;color:var(--accent);font-size:15px;">Lista de Digimons</span>
+      <span style="font-weight:700;color:var(--accent);font-size:15px;" data-i18n="listTitle">Lista de Digimons</span>
       <span style="color:var(--sub-fg);font-size:12px;" id="listStatus"></span>
-      <button class="btn-buscar" id="refreshListBtn" style="margin-left:auto;">&#x27F3; Atualizar</button>
+      <button class="btn-buscar" id="refreshListBtn" style="margin-left:auto;" data-i18n="atualizar">&#x27F3; Atualizar</button>
     </div>
   </div>
 
@@ -282,8 +290,8 @@
     <table class="list-table" id="listTable">
       <thead>
         <tr>
-          <th>Nome</th><th>Forma</th><th>HP</th><th>DS</th><th>AT</th>
-          <th>CT(%)</th><th>HT</th><th>DE</th><th>Lv Cap</th>
+          <th data-i18n="nome">Nome</th><th data-i18n="forma">Forma</th><th data-i18n="hp">HP</th><th data-i18n="ds">DS</th><th data-i18n="at">AT</th>
+          <th data-i18n="ct">CT(%)</th><th data-i18n="ht">HT</th><th data-i18n="de">DE</th><th data-i18n="lvCap">Lv Cap</th>
         </tr>
       </thead>
       <tbody id="listBody"></tbody>
@@ -296,12 +304,12 @@
 <div class="tab-content" id="tab-seals">
 
   <div class="card">
-    <div class="card-title">Seal Calculator</div>
+    <div class="card-title" data-i18n="sealCalc">Seal Calculator</div>
 
     <!-- Sub-tabs -->
     <div class="sub-tabs-nav">
-      <button class="sub-tab-btn active" data-subtab="seal-calc">Calculator</button>
-      <button class="sub-tab-btn" data-subtab="seal-browser">Seal Browser</button>
+      <button class="sub-tab-btn active" data-subtab="seal-calc" data-i18n="sealCalcTab">Calculator</button>
+      <button class="sub-tab-btn" data-subtab="seal-browser" data-i18n="sealBrowser">Seal Browser</button>
     </div>
 
     <!-- Stat buttons -->
@@ -310,9 +318,9 @@
     <!-- Calculator sub-tab -->
     <div class="sub-tab-content active" id="subtab-seal-calc">
       <div class="form-row">
-        <label>Target Value:</label>
-        <input type="number" id="sealTarget" min="1" placeholder="e.g. 3000">
-        <button class="btn-buscar" id="sealCalcBtn">Calculate</button>
+        <label data-i18n="targetValue">Target Value:</label>
+        <input type="number" id="sealTarget" min="1" placeholder="e.g. 3000" data-i18n="placeholder:enterTarget">
+        <button class="btn-buscar" id="sealCalcBtn" data-i18n="calculate">Calculate</button>
       </div>
       <div id="sealResult"></div>
     </div>
@@ -320,21 +328,21 @@
     <!-- Browser sub-tab -->
     <div class="sub-tab-content" id="subtab-seal-browser">
       <div class="form-row">
-        <input type="text" id="sealSearch" placeholder="Search seal names..." style="flex:1;min-width:150px;">
-        <label><input type="checkbox" id="sealOwnedOnly"> Owned only</label>
-        <button class="btn-buscar" id="sealExportBtn" style="font-size:12px;padding:5px 10px;">Exportar .json</button>
-        <button class="btn-buscar" id="sealImportBtn" style="font-size:12px;padding:5px 10px;">Carregar .json</button>
+        <input type="text" id="sealSearch" placeholder="Search seal names..." style="flex:1;min-width:150px;" data-i18n="placeholder:searchSeal">
+        <label><input type="checkbox" id="sealOwnedOnly"> <span data-i18n="ownedOnly">Owned only</span></label>
+        <button class="btn-buscar" id="sealExportBtn" style="font-size:12px;padding:5px 10px;" data-i18n="exportJson">Exportar .json</button>
+        <button class="btn-buscar" id="sealImportBtn" style="font-size:12px;padding:5px 10px;" data-i18n="importJson">Carregar .json</button>
         <input type="file" id="sealImportFile" accept=".json" style="display:none;">
       </div>
       <div class="list-table-wrap">
         <table class="list-table" id="sealTable">
           <thead>
             <tr>
-              <th data-sort="name">Name</th>
-              <th data-sort="max" class="sort-right">Max</th>
-              <th data-sort="price" class="sort-right">Price (M)</th>
-              <th data-sort="efficiency" class="sort-right">Eff.</th>
-              <th>Owned</th>
+              <th data-sort="name" data-i18n="sealName">Name</th>
+              <th data-sort="max" class="sort-right" data-i18n="sealMax">Max</th>
+              <th data-sort="price" class="sort-right" data-i18n="sealPrice">Price (M)</th>
+              <th data-sort="efficiency" class="sort-right" data-i18n="sealEff">Eff.</th>
+              <th data-i18n="sealOwned">Owned</th>
             </tr>
           </thead>
           <tbody id="sealBody"></tbody>
@@ -351,50 +359,50 @@
   <div class="dgcalc-layout">
     <div class="dgcalc-left">
       <div class="dgcalc-heading">
-        <h2>Dungeon Checker</h2>
-        <p class="dgcalc-subtitle">Insira os stats do seu Digimon &mdash; a diferen&ccedil;a de n&iacute;vel &eacute; aplicada automaticamente.</p>
+        <h2 data-i18n="dgTitle">Dungeon Checker</h2>
+        <p class="dgcalc-subtitle" data-i18n="dgSub">Insira os stats do seu Digimon &mdash; a diferen&ccedil;a de n&iacute;vel &eacute; aplicada automaticamente.</p>
       </div>
       <div class="card">
-        <div class="card-title">Seus Stats</div>
+        <div class="card-title" data-i18n="dgYourStats">Seus Stats</div>
         <div class="dgcalc-fields">
           <div class="dgcalc-field">
-            <label for="dg-level">N&iacute;vel <span class="dgcalc-badge">1&ndash;180</span></label>
+            <label for="dg-level" data-i18n="dgLevel">N&iacute;vel <span class="dgcalc-badge">1&ndash;180</span></label>
             <input type="number" id="dg-level" min="1" max="180" placeholder="150" inputmode="numeric">
-            <span class="dgcalc-hint">N&iacute;vel atual do seu Digimon</span>
+            <span class="dgcalc-hint" data-i18n="dgLevelHint">N&iacute;vel atual do seu Digimon</span>
           </div>
           <div class="dgcalc-field">
-            <label for="dg-ct">Critical Rate <span class="dgcalc-badge">CT</span></label>
+            <label for="dg-ct" data-i18n="dgCt">Critical Rate <span class="dgcalc-badge">CT</span></label>
             <input type="number" id="dg-ct" min="0" max="99999" placeholder="ex: 400" inputmode="numeric">
-            <span class="dgcalc-hint">Janela de status do Digimon</span>
+            <span class="dgcalc-hint" data-i18n="dgCtHint">Janela de status do Digimon</span>
           </div>
           <div class="dgcalc-field">
-            <label for="dg-ht">Hit Rate <span class="dgcalc-badge">HT</span></label>
+            <label for="dg-ht" data-i18n="dgHt">Hit Rate <span class="dgcalc-badge">HT</span></label>
             <input type="number" id="dg-ht" min="0" max="999999" placeholder="ex: 17000" inputmode="numeric">
-            <span class="dgcalc-hint">Janela de status do Digimon</span>
+            <span class="dgcalc-hint" data-i18n="dgHtHint">Janela de status do Digimon</span>
           </div>
         </div>
       </div>
       <div class="dgcalc-chips" id="dgChips" style="display:none;">
-        <div class="dgcalc-chip"><span class="dgcalc-chip-label">N&iacute;vel</span><span class="dgcalc-chip-val" id="dgChipLv">-</span></div>
+        <div class="dgcalc-chip"><span class="dgcalc-chip-label" data-i18n="dgLevel">N&iacute;vel</span><span class="dgcalc-chip-val" id="dgChipLv">-</span></div>
         <div class="dgcalc-chip"><span class="dgcalc-chip-label">CT</span><span class="dgcalc-chip-val" id="dgChipCt">-</span></div>
         <div class="dgcalc-chip"><span class="dgcalc-chip-label">HT</span><span class="dgcalc-chip-val" id="dgChipHt">-</span></div>
       </div>
       <div class="dgcalc-counters" id="dgCounters" style="display:none;">
-        <span class="dgcalc-pill" data-type="ready"><span class="dgcalc-pill-icon">&#10003;</span><span id="dgReady">0</span> Pronto</span>
-        <span class="dgcalc-pill" data-type="close"><span class="dgcalc-pill-icon">&#9888;</span><span id="dgClose">0</span> Quase</span>
-        <span class="dgcalc-pill" data-type="not-ready"><span class="dgcalc-pill-icon">&#10007;</span><span id="dgNotReady">0</span> N&atilde;o Pronto</span>
+        <span class="dgcalc-pill" data-type="ready"><span class="dgcalc-pill-icon">&#10003;</span><span id="dgReady">0</span> <span data-i18n="dgReady">Pronto</span></span>
+        <span class="dgcalc-pill" data-type="close"><span class="dgcalc-pill-icon">&#9888;</span><span id="dgClose">0</span> <span data-i18n="dgClose">Quase</span></span>
+        <span class="dgcalc-pill" data-type="not-ready"><span class="dgcalc-pill-icon">&#10007;</span><span id="dgNotReady">0</span> <span data-i18n="dgNotReady">N&atilde;o Pronto</span></span>
       </div>
-      <div class="dgcalc-disclaimer">&#9432; <strong>Dados da comunidade.</strong> Limite verificado via Holy Guardians. Verifique in-game ap&oacute;s patches.</div>
+      <div class="dgcalc-disclaimer">&#9432; <span data-i18n="dgDisclaimer"><strong>Dados da comunidade.</strong> Limite verificado via Holy Guardians. Verifique in-game ap&oacute;s patches.</span></div>
     </div>
     <div class="dgcalc-right">
       <div class="dgcalc-section-header">
-        <h3>Dungeons Endgame</h3>
+        <h3 data-i18n="dgEndgame">Dungeons Endgame</h3>
         <span id="dgDungeonCount">7 dungeons</span>
       </div>
       <div class="dgcalc-empty" id="dgEmpty">
         <div class="dgcalc-empty-icon">&#9878;</div>
-        <p class="dgcalc-empty-title">Insira seus stats para come&ccedil;ar</p>
-        <p class="dgcalc-empty-text">Preencha N&iacute;vel, CT e HT na esquerda para ver quais dungeons voc&ecirc; est&aacute; pronto. Resultados atualizam em tempo real.</p>
+        <p class="dgcalc-empty-title" data-i18n="dgEmptyTitle">Insira seus stats para come&ccedil;ar</p>
+        <p class="dgcalc-empty-text" data-i18n="dgEmptyText">Preencha N&iacute;vel, CT e HT na esquerda para ver quais dungeons voc&ecirc; est&aacute; pronto. Resultados atualizam em tempo real.</p>
       </div>
       <div class="dgcalc-grid" id="dgGrid"></div>
     </div>
@@ -406,7 +414,7 @@
   <div class="dunit-layout">
     <div class="dunit-left">
       <div class="card">
-        <div class="card-title">Progresso D-Unit</div>
+        <div class="card-title" data-i18n="dunitProgress">Progresso D-Unit</div>
         <div class="dunit-progress-ring" id="dunitRing">
           <svg viewBox="0 0 140 140">
             <circle cx="70" cy="70" r="60" fill="none" stroke="var(--border)" stroke-width="8"/>
@@ -429,15 +437,15 @@
         <div class="dunit-stats-accumulated" id="dunitStatsAccum"></div>
       </div>
       <div class="card">
-        <div class="card-title">Recompensas por Tier</div>
+        <div class="card-title" data-i18n="dunitRewards">Recompensas por Tier</div>
         <div class="dunit-tier-list" id="dunitTierList"></div>
       </div>
     </div>
     <div class="dunit-right">
       <div class="dunit-toolbar">
-        <input type="text" id="dunitSearch" placeholder="Buscar familia..." class="dunit-search">
+        <input type="text" id="dunitSearch" placeholder="Buscar familia..." class="dunit-search" data-i18n="placeholder:dunitSearch">
         <select id="dunitStatFilter" class="dunit-stat-select">
-          <option value="">Todas as stats</option>
+          <option value="" data-i18n="dunitAllStats">Todas as stats</option>
           <option value="HP">HP</option>
           <option value="DS">DS</option>
           <option value="AT">AT</option>
@@ -462,9 +470,9 @@
           <option value="data_skill_damage_percent">Data SCD</option>
         </select>
         <div class="dunit-filters">
-          <button class="dunit-filter-btn active" data-filter="all">Todos</button>
-          <button class="dunit-filter-btn" data-filter="pending">Pendentes</button>
-          <button class="dunit-filter-btn" data-filter="done">Completados</button>
+          <button class="dunit-filter-btn active" data-filter="all" data-i18n="dunitTodos">Todos</button>
+          <button class="dunit-filter-btn" data-filter="pending" data-i18n="dunitPendentes">Pendentes</button>
+          <button class="dunit-filter-btn" data-filter="done" data-i18n="dunitCompletados">Completados</button>
         </div>
       </div>
       <div class="dunit-grid" id="dunitGrid"></div>

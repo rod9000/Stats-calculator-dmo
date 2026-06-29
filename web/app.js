@@ -1,7 +1,503 @@
 // ===================== DIGIMON CALCULATOR WEB =====================
 
+// ===================== i18n =====================
+var i18n = {
+  _lang: localStorage.getItem('dmo.lang') || 'pt',
+  _strings: {
+    pt: {
+      title: 'Digimon Master Online - Calculadora',
+      themeDark: 'Modo Escuro',
+      themeLight: 'Modo Claro',
+      h1: 'Digimon Master Online',
+      sub: 'Calculadora de Status',
+      tabCalc: 'Calculadora',
+      tabReverse: 'Calculadora Reversa',
+      tabCompare: 'Comparação',
+      tabList: 'Lista de Digimons',
+      tabSeals: 'Seals',
+      tabDg: 'DG Calculator',
+      tabDunit: 'D-Unit',
+      searchDigimon: 'Buscar Digimon',
+      searchPlaceholder: 'Nome do Digimon...',
+      buscar: 'Buscar',
+      baseStat: 'Base Stat',
+      simples: 'Simples',
+      porNivel: 'Por Nível',
+      base: 'Base',
+      adicional: 'Adicional',
+      level: 'Level:',
+      evo: 'Evo:',
+      size: 'Size:',
+      hp: 'HP', ds: 'DS', at: 'AT', ct: 'CT(%)', ht: 'HT', de: 'DE',
+      baseLv1: 'Base Lv1',
+      growthLv: 'Growth/Lv',
+      final: 'Final',
+      clone: 'Clone',
+      cloneLevel: 'Nível do Clone:',
+      flatBonuses: 'Flat Bonuses',
+      flatHint: 'Selos, Chipset, D-Unit, Equipamentos, Achievements, Buff Tamer',
+      flatSelos: 'Selos',
+      flatChipset: 'Chipset',
+      flatDUnit: 'D-Unit',
+      flatEquip: 'Equipamentos',
+      flatAchieve: 'Achievements',
+      flatBuff: 'Buff Tamer',
+      calcular: 'Calcular',
+      ctrlEnter: 'Ctrl+Enter',
+      resultadoFinal: 'Resultado Final',
+      stat: 'Stat',
+      baseCol: 'Base',
+      perLv: '+/Lv',
+      cloneX: 'Clone (x)',
+      cloneAdd: 'Clone (+)',
+      flat: 'Flat',
+      total: 'Total',
+      copiar: 'Copiar',
+      calcReverse: 'Calculadora Reversa',
+      revHint: 'Descubra Base Lv1 e Growth/Lv a partir de valores conhecidos.',
+      modo: 'Modo:',
+      rev2p: 'Descobridor (2 pontos)',
+      rev1p: 'Verificador (1 ponto + Base)',
+      statLabel: 'Stat:',
+      evoLabel: 'Evo:',
+      ponto1: 'Ponto 1',
+      ponto2: 'Ponto 2',
+      totalLabel: 'Total:',
+      calcularReverso: 'Calcular Reverso',
+      compareTitle: 'Comparação de Digimons',
+      compareHint: 'Dois cards por linha, busca direta no cache.',
+      digimonPlaceholder: 'Digimon...',
+      listTitle: 'Lista de Digimons',
+      atualizar: 'Atualizar',
+      nome: 'Nome',
+      forma: 'Forma',
+      lvCap: 'Lv Cap',
+      sealCalc: 'Seal Calculator',
+      sealCalcTab: 'Calculator',
+      sealBrowser: 'Seal Browser',
+      targetValue: 'Target Value:',
+      calculate: 'Calculate',
+      searchSeal: 'Search seal names...',
+      ownedOnly: 'Owned only',
+      exportJson: 'Exportar .json',
+      importJson: 'Carregar .json',
+      sealName: 'Name',
+      sealMax: 'Max',
+      sealPrice: 'Price (M)',
+      sealEff: 'Eff.',
+      sealOwned: 'Owned',
+      dgTitle: 'Dungeon Checker',
+      dgSub: 'Insira os stats do seu Digimon — a diferença de nível é aplicada automaticamente.',
+      dgYourStats: 'Seus Stats',
+      dgLevel: 'Nível',
+      dgCt: 'Critical Rate',
+      dgHt: 'Hit Rate',
+      dgLevelHint: 'Nível atual do seu Digimon',
+      dgCtHint: 'Janela de status do Digimon',
+      dgHtHint: 'Janela de status do Digimon',
+      dgReady: 'Pronto',
+      dgClose: 'Quase',
+      dgNotReady: 'Não Pronto',
+      dgDisclaimer: 'Dados da comunidade. Limite verificado via Holy Guardians. Verifique in-game após patches.',
+      dgEndgame: 'Dungeons Endgame',
+      dgEmptyTitle: 'Insira seus stats para começar',
+      dgEmptyText: 'Preencha Nível, CT e HT na esquerda para ver quais dungeons você está pronto. Resultados atualizam em tempo real.',
+      dunitProgress: 'Progresso D-Unit',
+      dunitRankNext: 'Próximo: ',
+      dunitRankMax: 'Rank Máximo!',
+      dunitNoneCompleted: 'Nenhum grupo completado ainda.',
+      dunitSearch: 'Buscar familia...',
+      dunitAllStats: 'Todas as stats',
+      dunitTodos: 'Todos',
+      dunitPendentes: 'Pendentes',
+      dunitCompletados: 'Completados',
+      dunitRewards: 'Recompensas por Tier',
+      dunitPossuir: 'Possuir ',
+      dunitDigimons: ' Digimons',
+      dunitNivelTotal: 'Nivel total ',
+      dunitTranscender: 'Transcender ',
+      dunitGrupos: ' grupos',
+      okCache: 'OK! (',
+      naoEncontrado: 'Nao encontrado: ',
+      buscandoOnline: 'Buscando online...',
+      encontrado: 'Encontrado (',
+      form: 'Form: ',
+      lvCapLabel: 'Lv Cap: ',
+      emCache: ' em cache',
+      preenchaDois: 'Preencha os dois pontos.',
+      preenchaTotal: 'Preencha o valor total.',
+      baseLv1Result: 'Base Lv1 (Size 1.0): ',
+      growthLvResult: '  |  Growth/Lv: ',
+      seuSeal: 'Your ',
+      seals: ' seals: +',
+      owned: 'Owned: +',
+      need: ' &rarr; Need: +',
+      targetAlready: 'Target already reached!',
+      yourOwned: 'Your owned seals provide +',
+      totalStat: 'Total ',
+      totalCost: 'Total Cost',
+      sealsNeeded: 'Seals Needed',
+      recommended: 'Recommended Seals (by efficiency)',
+      enterTarget: 'Enter a target value and click Calculate.',
+    },
+    en: {
+      title: 'Digimon Master Online - Calculator',
+      themeDark: 'Dark Mode',
+      themeLight: 'Light Mode',
+      h1: 'Digimon Master Online',
+      sub: 'Stats Calculator',
+      tabCalc: 'Calculator',
+      tabReverse: 'Reverse Calculator',
+      tabCompare: 'Comparison',
+      tabList: 'Digimon List',
+      tabSeals: 'Seals',
+      tabDg: 'DG Calculator',
+      tabDunit: 'D-Unit',
+      searchDigimon: 'Search Digimon',
+      searchPlaceholder: 'Digimon name...',
+      buscar: 'Search',
+      baseStat: 'Base Stat',
+      simples: 'Simple',
+      porNivel: 'By Level',
+      base: 'Base',
+      adicional: 'Bonus',
+      level: 'Level:',
+      evo: 'Evo:',
+      size: 'Size:',
+      hp: 'HP', ds: 'DS', at: 'AT', ct: 'CT(%)', ht: 'HT', de: 'DE',
+      baseLv1: 'Base Lv1',
+      growthLv: 'Growth/Lv',
+      final: 'Final',
+      clone: 'Clone',
+      cloneLevel: 'Clone Level:',
+      flatBonuses: 'Flat Bonuses',
+      flatHint: 'Seals, Chipset, D-Unit, Equipment, Achievements, Tamer Buff',
+      flatSelos: 'Seals',
+      flatChipset: 'Chipset',
+      flatDUnit: 'D-Unit',
+      flatEquip: 'Equipment',
+      flatAchieve: 'Achievements',
+      flatBuff: 'Tamer Buff',
+      calcular: 'Calculate',
+      ctrlEnter: 'Ctrl+Enter',
+      resultadoFinal: 'Final Result',
+      stat: 'Stat',
+      baseCol: 'Base',
+      perLv: '+/Lv',
+      cloneX: 'Clone (x)',
+      cloneAdd: 'Clone (+)',
+      flat: 'Flat',
+      total: 'Total',
+      copiar: 'Copy',
+      calcReverse: 'Reverse Calculator',
+      revHint: 'Find Base Lv1 and Growth/Lv from known values.',
+      modo: 'Mode:',
+      rev2p: 'Finder (2 points)',
+      rev1p: 'Checker (1 point + Base)',
+      statLabel: 'Stat:',
+      evoLabel: 'Evo:',
+      ponto1: 'Point 1',
+      ponto2: 'Point 2',
+      totalLabel: 'Total:',
+      calcularReverso: 'Calculate Reverse',
+      compareTitle: 'Digimon Comparison',
+      compareHint: 'Two cards per row, direct cache search.',
+      digimonPlaceholder: 'Digimon...',
+      listTitle: 'Digimon List',
+      atualizar: 'Refresh',
+      nome: 'Name',
+      forma: 'Form',
+      lvCap: 'Lv Cap',
+      sealCalc: 'Seal Calculator',
+      sealCalcTab: 'Calculator',
+      sealBrowser: 'Seal Browser',
+      targetValue: 'Target Value:',
+      calculate: 'Calculate',
+      searchSeal: 'Search seal names...',
+      ownedOnly: 'Owned only',
+      exportJson: 'Export .json',
+      importJson: 'Import .json',
+      sealName: 'Name',
+      sealMax: 'Max',
+      sealPrice: 'Price (M)',
+      sealEff: 'Eff.',
+      sealOwned: 'Owned',
+      dgTitle: 'Dungeon Checker',
+      dgSub: 'Enter your Digimon stats — level difference is applied automatically.',
+      dgYourStats: 'Your Stats',
+      dgLevel: 'Level',
+      dgCt: 'Critical Rate',
+      dgHt: 'Hit Rate',
+      dgLevelHint: 'Your digimon\'s current level',
+      dgCtHint: 'From your digimon status window',
+      dgHtHint: 'From your digimon status window',
+      dgReady: 'Ready',
+      dgClose: 'Close',
+      dgNotReady: 'Not Ready',
+      dgDisclaimer: 'Community data. Threshold verified via Holy Guardians. Check in-game after patches.',
+      dgEndgame: 'Endgame Dungeons',
+      dgEmptyTitle: 'Enter your stats to begin',
+      dgEmptyText: 'Fill in Level, CT and HT on the left to see which dungeons you are ready for. Results update in real time.',
+      dunitProgress: 'D-Unit Progress',
+      dunitRankNext: 'Next: ',
+      dunitRankMax: 'Max Rank!',
+      dunitNoneCompleted: 'No groups completed yet.',
+      dunitSearch: 'Search family...',
+      dunitAllStats: 'All stats',
+      dunitTodos: 'All',
+      dunitPendentes: 'Pending',
+      dunitCompletados: 'Completed',
+      dunitRewards: 'Tier Rewards',
+      dunitPossuir: 'Own ',
+      dunitDigimons: ' Digimons',
+      dunitNivelTotal: 'Total level ',
+      dunitTranscender: 'Transcend ',
+      dunitGrupos: ' groups',
+      okCache: 'OK! (',
+      naoEncontrado: 'Not found: ',
+      buscandoOnline: 'Searching online...',
+      encontrado: 'Found (',
+      form: 'Form: ',
+      lvCapLabel: 'Lv Cap: ',
+      emCache: ' in cache',
+      preenchaDois: 'Fill in both points.',
+      preenchaTotal: 'Fill in the total value.',
+      baseLv1Result: 'Base Lv1 (Size 1.0): ',
+      growthLvResult: '  |  Growth/Lv: ',
+      seuSeal: 'Your ',
+      seals: ' seals: +',
+      owned: 'Owned: +',
+      need: ' &rarr; Need: +',
+      targetAlready: 'Target already reached!',
+      yourOwned: 'Your owned seals provide +',
+      totalStat: 'Total ',
+      totalCost: 'Total Cost',
+      sealsNeeded: 'Seals Needed',
+      recommended: 'Recommended Seals (by efficiency)',
+      enterTarget: 'Enter a target value and click Calculate.',
+    },
+    es: {
+      title: 'Digimon Master Online - Calculadora',
+      themeDark: 'Modo Oscuro',
+      themeLight: 'Modo Claro',
+      h1: 'Digimon Master Online',
+      sub: 'Calculadora de Estadísticas',
+      tabCalc: 'Calculadora',
+      tabReverse: 'Calculadora Inversa',
+      tabCompare: 'Comparación',
+      tabList: 'Lista de Digimons',
+      tabSeals: 'Seals',
+      tabDg: 'DG Calculator',
+      tabDunit: 'D-Unit',
+      searchDigimon: 'Buscar Digimon',
+      searchPlaceholder: 'Nombre del Digimon...',
+      buscar: 'Buscar',
+      baseStat: 'Estadística Base',
+      simples: 'Simple',
+      porNivel: 'Por Nivel',
+      base: 'Base',
+      adicional: 'Adicional',
+      level: 'Nivel:',
+      evo: 'Evo:',
+      size: 'Tamaño:',
+      hp: 'HP', ds: 'DS', at: 'AT', ct: 'CT(%)', ht: 'HT', de: 'DE',
+      baseLv1: 'Base Lv1',
+      growthLv: 'Crecimiento/Lv',
+      final: 'Final',
+      clone: 'Clone',
+      cloneLevel: 'Nivel del Clone:',
+      flatBonuses: 'Bonificaciones Planas',
+      flatHint: 'Sellos, Chipset, D-Unit, Equipos, Logros, Buff Tamer',
+      flatSelos: 'Sellos',
+      flatChipset: 'Chipset',
+      flatDUnit: 'D-Unit',
+      flatEquip: 'Equipos',
+      flatAchieve: 'Logros',
+      flatBuff: 'Buff Tamer',
+      calcular: 'Calcular',
+      ctrlEnter: 'Ctrl+Enter',
+      resultadoFinal: 'Resultado Final',
+      stat: 'Stat',
+      baseCol: 'Base',
+      perLv: '+/Lv',
+      cloneX: 'Clone (x)',
+      cloneAdd: 'Clone (+)',
+      flat: 'Plana',
+      total: 'Total',
+      copiar: 'Copiar',
+      calcReverse: 'Calculadora Inversa',
+      revHint: 'Descubra Base Lv1 y Crecimiento/Lv a partir de valores conocidos.',
+      modo: 'Modo:',
+      rev2p: 'Descubridor (2 puntos)',
+      rev1p: 'Verificador (1 punto + Base)',
+      statLabel: 'Stat:',
+      evoLabel: 'Evo:',
+      ponto1: 'Punto 1',
+      ponto2: 'Punto 2',
+      totalLabel: 'Total:',
+      calcularReverso: 'Calcular Inverso',
+      compareTitle: 'Comparación de Digimons',
+      compareHint: 'Dos tarjetas por fila, búsqueda directa en caché.',
+      digimonPlaceholder: 'Digimon...',
+      listTitle: 'Lista de Digimons',
+      atualizar: 'Actualizar',
+      nome: 'Nombre',
+      forma: 'Forma',
+      lvCap: 'Lv Máx',
+      sealCalc: 'Calculadora de Sellos',
+      sealCalcTab: 'Calculadora',
+      sealBrowser: 'Navegador',
+      targetValue: 'Valor Objetivo:',
+      calculate: 'Calcular',
+      searchSeal: 'Buscar sellos...',
+      ownedOnly: 'Solo propios',
+      exportJson: 'Exportar .json',
+      importJson: 'Cargar .json',
+      sealName: 'Nombre',
+      sealMax: 'Máx',
+      sealPrice: 'Precio (M)',
+      sealEff: 'Efic.',
+      sealOwned: 'Propio',
+      dgTitle: 'Dungeon Checker',
+      dgSub: 'Ingrese las stats de su Digimon — la diferencia de nivel se aplica automáticamente.',
+      dgYourStats: 'Tus Stats',
+      dgLevel: 'Nivel',
+      dgCt: 'Tasa Crítica',
+      dgHt: 'Tasa de Acierto',
+      dgLevelHint: 'Nivel actual de tu Digimon',
+      dgCtHint: 'Ventana de estado del Digimon',
+      dgHtHint: 'Ventana de estado del Digimon',
+      dgReady: 'Listo',
+      dgClose: 'Cerca',
+      dgNotReady: 'No Listo',
+      dgDisclaimer: 'Datos de la comunidad. Límite verificado mediante Holy Guardians. Verifique en el juego después de parches.',
+      dgEndgame: 'Dungeons Endgame',
+      dgEmptyTitle: 'Ingrese sus stats para comenzar',
+      dgEmptyText: 'Complete Nivel, CT y HT a la izquierda para ver qué mazmorras puede superar. Los resultados se actualizan en tiempo real.',
+      dunitProgress: 'Progreso D-Unit',
+      dunitRankNext: 'Siguiente: ',
+      dunitRankMax: '¡Rango Máximo!',
+      dunitNoneCompleted: 'Ningún grupo completado aún.',
+      dunitSearch: 'Buscar familia...',
+      dunitAllStats: 'Todas las stats',
+      dunitTodos: 'Todos',
+      dunitPendentes: 'Pendientes',
+      dunitCompletados: 'Completados',
+      dunitRewards: 'Recompensas por Rango',
+      dunitPossuir: 'Poseer ',
+      dunitDigimons: ' Digimons',
+      dunitNivelTotal: 'Nivel total ',
+      dunitTranscender: 'Trascender ',
+      dunitGrupos: ' grupos',
+      okCache: '¡OK! (',
+      naoEncontrado: 'No encontrado: ',
+      buscandoOnline: 'Buscando en línea...',
+      encontrado: 'Encontrado (',
+      form: 'Forma: ',
+      lvCapLabel: 'Lv Máx: ',
+      emCache: ' en caché',
+      preenchaDois: 'Complete los dos puntos.',
+      preenchaTotal: 'Complete el valor total.',
+      baseLv1Result: 'Base Lv1 (Size 1.0): ',
+      growthLvResult: '  |  Crecimiento/Lv: ',
+      seuSeal: 'Tus ',
+      seals: ' sellos: +',
+      owned: 'Propios: +',
+      need: ' &rarr; Necesario: +',
+      targetAlready: '¡Objetivo ya alcanzado!',
+      yourOwned: 'Tus sellos proporcionan +',
+      totalStat: 'Total ',
+      totalCost: 'Costo Total',
+      sealsNeeded: 'Sellos Necesarios',
+      recommended: 'Sellos Recomendados (por eficiencia)',
+      enterTarget: 'Ingrese un valor objetivo y haga clic en Calcular.',
+    },
+  },
+  t: function(key) {
+    var s = this._strings[this._lang];
+    return s && s[key] !== undefined ? s[key] : (this._strings.pt[key] || key);
+  },
+  setLang: function(lang) {
+    if (!this._strings[lang]) return;
+    this._lang = lang;
+    try { localStorage.setItem('dmo.lang', lang); } catch(e) {}
+    translateAll();
+  }
+};
+
+function tr(key) { return i18n.t(key); }
+
+function translateAll() {
+  var els = document.querySelectorAll('[data-i18n]');
+  els.forEach(function(el) {
+    var keys = el.getAttribute('data-i18n').split(' ');
+    keys.forEach(function(k) {
+      if (k.indexOf(':') !== -1) {
+        var parts = k.split(':');
+        var attr = parts[0];
+        var key = parts[1];
+        el.setAttribute(attr, tr(key));
+      } else {
+        el.textContent = tr(k);
+      }
+    });
+  });
+
+  // Title
+  document.title = tr('title');
+
+  // Theme toggle
+  var themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) {
+    var isDark = document.body.getAttribute('data-theme') === 'dark';
+    themeBtn.textContent = isDark ? tr('themeLight') : tr('themeDark');
+  }
+
+  // Dynamic labels
+  var statLabels = ['hp','ds','at','ct','ht','de'];
+  statLabels.forEach(function(sk) {
+    var label = document.getElementById('resLabel-' + sk);
+    if (label) label.textContent = tr(sk);
+  });
+
+  // Flat grid labels (re-generate)
+  var flatGrid = document.getElementById('flatGrid');
+  if (flatGrid) {
+    var flatCatKey = {'Selos':'flatSelos','Chipset':'flatChipset','D-Unit':'flatDUnit','Equipamentos':'flatEquip','Achievements':'flatAchieve','Buff Tamer':'flatBuff'};
+    var labelCells = flatGrid.querySelectorAll('.label-cell');
+    labelCells.forEach(function(cell, i) {
+      if (i < FLAT_CATEGORIES.length) {
+        cell.textContent = tr(flatCatKey[FLAT_CATEGORIES[i]] || FLAT_CATEGORIES[i]);
+      }
+    });
+  }
+
+  // Clone hint - find and update
+  var cloneSelect = document.getElementById('cloneLevel');
+  var cloneHintEl = cloneSelect ? cloneSelect.nextElementSibling : null;
+  if (cloneHintEl && cloneHintEl.classList.contains('card-hint')) {
+    var lvl = parseInt(cloneSelect.value) || 0;
+    var row = typeof CLONE_NUM !== 'undefined' ? (CLONE_NUM[lvl] || CLONE_NUM[0]) : [0,0,0,0,0,0];
+    cloneHintEl.textContent = 'AT = x' + (1 + row[1]).toFixed(2) +
+      ' | CT = x' + (1 + row[2]).toFixed(2) +
+      ' | HP = x' + (1 + row[5]).toFixed(2);
+  }
+
+  // Compare hint
+  var compareHint = document.querySelector('#tab-comparacao .card-hint');
+  if (compareHint) compareHint.textContent = tr('compareHint');
+
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initApp();
+  // Apply saved language after init
+  if (i18n._lang !== 'pt') {
+    translateAll();
+    document.querySelectorAll('.lang-widget .lang-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.lang === i18n._lang);
+    });
+  }
 });
 
 function initApp() {
@@ -64,7 +560,26 @@ function initApp() {
   themeBtn.addEventListener('click', function() {
     var isDark = document.body.getAttribute('data-theme') === 'dark';
     document.body.setAttribute('data-theme', isDark ? '' : 'dark');
-    themeBtn.textContent = isDark ? 'Modo Escuro' : 'Modo Claro';
+    themeBtn.textContent = isDark ? tr('themeDark') : tr('themeLight');
+  });
+
+  // ===================== LANG SWITCHER =====================
+  // Set active language button
+  document.querySelectorAll('.lang-widget .lang-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.lang === i18n._lang);
+  });
+  document.getElementById('langWidget').addEventListener('click', function(e) {
+    var btn = e.target.closest('.lang-btn');
+    if (!btn) return;
+    var lang = btn.dataset.lang;
+    if (lang === i18n._lang) return;
+    document.querySelectorAll('.lang-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.lang === lang);
+    });
+    i18n.setLang(lang);
+    // Re-apply theme button text
+    var isDark = document.body.getAttribute('data-theme') === 'dark';
+    themeBtn.textContent = isDark ? tr('themeLight') : tr('themeDark');
   });
 
   // ===================== FORMAT =====================
@@ -175,7 +690,7 @@ function initApp() {
       preencherDados(dados);
       return;
     }
-    if (statusEl) statusEl.textContent = 'Buscando online...';
+    if (statusEl) statusEl.textContent = tr('buscandoOnline');
     buscarDigimonOnline(nome).then(function(dados) {
       if (dados) {
         if (statusEl) statusEl.textContent = '';
@@ -189,10 +704,11 @@ function initApp() {
 
   // ===================== FLAT GRID GENERATION =====================
   var flatGrid = $('#flatGrid');
+  var flatCatKey = {'Selos':'flatSelos','Chipset':'flatChipset','D-Unit':'flatDUnit','Equipamentos':'flatEquip','Achievements':'flatAchieve','Buff Tamer':'flatBuff'};
   FLAT_CATEGORIES.forEach(function(cat) {
     var label = document.createElement('div');
     label.className = 'label-cell';
-    label.textContent = cat;
+    label.textContent = tr(flatCatKey[cat] || cat);
     flatGrid.appendChild(label);
     STAT_KEYS.forEach(function(sk) {
       var cell = document.createElement('div');
@@ -313,7 +829,7 @@ function initApp() {
 
   function preencherDados(dados) {
     state.dados = dados;
-    $('#calcStatus').textContent = 'OK! (' + (dados._source || 'cache') + ')';
+    $('#calcStatus').textContent = tr('okCache') + (dados._source || 'cache') + ')';
     $('#calcStatus').className = 'status-ok';
 
     var mode = document.querySelector('input[name="calc-mode"]:checked').value;
@@ -353,7 +869,7 @@ function initApp() {
 
   function mostrarErroBusca(name) {
     state.dados = null;
-    $('#calcStatus').textContent = 'Nao encontrado: ' + name;
+    $('#calcStatus').textContent = tr('naoEncontrado') + name;
     $('#calcStatus').className = 'status-err';
   }
 
@@ -499,7 +1015,7 @@ function initApp() {
       var t2 = parseNum($('#revT2').value);
 
       if (!t1 || !t2) {
-        $('#revResult').textContent = 'Preencha os dois pontos.';
+        $('#revResult').textContent = tr('preenchaDois');
         return;
       }
 
@@ -521,7 +1037,7 @@ function initApp() {
       var bv = parseNum($('#revBaseVal').value);
 
       if (!t1) {
-        $('#revResult').textContent = 'Preencha o valor total.';
+        $('#revResult').textContent = tr('preenchaTotal');
         return;
       }
 
@@ -538,8 +1054,8 @@ function initApp() {
       }
     }
 
-    $('#revResult').textContent = 'Base Lv1 (Size 1.0): ' +
-      fmt(result.baseLv1) + '  |  Growth/Lv: ' + fmt(result.growthLv);
+    $('#revResult').textContent = tr('baseLv1Result') +
+      fmt(result.baseLv1) + tr('growthLvResult') + fmt(result.growthLv);
   }
 
   // ===================== COMPARISON =====================
@@ -571,7 +1087,7 @@ function initApp() {
 
       var input = document.createElement('input');
       input.type = 'text';
-      input.placeholder = 'Digimon...';
+      input.placeholder = tr('digimonPlaceholder');
       input.id = 'cmpSearch-' + i;
       input.autocomplete = 'off';
       input.style.width = '100%';
@@ -671,7 +1187,7 @@ function initApp() {
     var tbody = $('#cmpBody-' + idx);
 
     if (!dados) {
-      status.textContent = 'Nao encontrado.';
+      status.textContent = tr('naoEncontrado').replace(': ', '.');
       status.className = 'status';
       info.textContent = '';
       tbody.innerHTML = '';
@@ -679,9 +1195,9 @@ function initApp() {
     }
 
     var source = dados._source || 'cache';
-    status.textContent = 'Encontrado (' + source + ')';
+    status.textContent = tr('encontrado') + source + ')';
     status.className = 'status';
-    info.textContent = 'Form: ' + (dados.form || '') + '  |  Lv Cap: ' + (dados.level_cap || '');
+    info.textContent = tr('form') + (dados.form || '') + '  |  ' + tr('lvCapLabel') + (dados.level_cap || '');
 
     tbody.innerHTML = '';
     STAT_KEYS.forEach(function(sk) {
@@ -713,7 +1229,7 @@ function initApp() {
       return;
     }
 
-    status.textContent = 'Buscando online...';
+    status.textContent = tr('buscandoOnline');
     buscarDigimonOnline(name).then(function(dados) {
       preencherCompareCard(idx, dados);
     });
@@ -756,7 +1272,7 @@ function initApp() {
       if (dados) cached++;
     });
 
-    $('#listStatus').textContent = cached + '/' + DIGIMON_NAMES.length + ' em cache';
+    $('#listStatus').textContent = cached + '/' + DIGIMON_NAMES.length + tr('emCache');
   }
 
   function sortList(colIdx, header) {
@@ -971,7 +1487,7 @@ function initApp() {
     // Summary
     var summary = $('#sealOwnedSummary');
     if (ownedTotal > 0) {
-      summary.textContent = 'Your ' + sealStat + ' seals: +' + ownedTotal;
+      summary.textContent = tr('seuSeal') + sealStat + tr('seals') + ownedTotal;
       summary.style.color = SEAL_COLORS[sealStat];
     } else {
       summary.textContent = '';
@@ -1000,15 +1516,15 @@ function initApp() {
     var effectiveTarget = Math.max(0, target - ownedTotal);
 
     if (target <= 0) {
-      container.innerHTML = '<p style="color:var(--sub-fg);padding:20px 0;">Enter a target value and click Calculate.</p>';
+      container.innerHTML = '<p style="color:var(--sub-fg);padding:20px 0;">' + tr('enterTarget') + '</p>';
       return;
     }
 
     if (effectiveTarget <= 0) {
       container.innerHTML =
         '<div class="seal-stat-card" style="border-color:var(--success);">' +
-        '<p style="font-weight:700;color:var(--success);font-size:16px;margin-bottom:4px;">Target already reached!</p>' +
-        '<p style="font-size:13px;color:var(--sub-fg);">Your owned seals provide +' + ownedTotal + ' ' + sealStat + '</p></div>';
+        '<p style="font-weight:700;color:var(--success);font-size:16px;margin-bottom:4px;">' + tr('targetAlready') + '</p>' +
+        '<p style="font-size:13px;color:var(--sub-fg);">' + tr('yourOwned') + ownedTotal + ' ' + sealStat + '</p></div>';
       return;
     }
 
@@ -1016,18 +1532,18 @@ function initApp() {
 
     var html = '';
     if (ownedTotal > 0) {
-      html += '<p style="font-size:12px;color:var(--sub-fg);margin-bottom:6px;">Owned: +' + ownedTotal + ' ' + sealStat +
-        ' &rarr; Need: +' + effectiveTarget + '</p>';
+      html += '<p style="font-size:12px;color:var(--sub-fg);margin-bottom:6px;">' + tr('owned') + ownedTotal + ' ' + sealStat +
+        tr('need') + effectiveTarget + '</p>';
     }
 
     // Summary cards
     var totalWithOwned = result.totalStat + ownedTotal;
     html += '<div class="seal-result-summary">';
-    html += '<div class="seal-stat-card"><div class="label">Total ' + sealStat + '</div><div class="value">+' + totalWithOwned + '</div></div>';
-    html += '<div class="seal-stat-card"><div class="label">Total Cost</div><div class="value" style="color:#f59e0b;">' +
+    html += '<div class="seal-stat-card"><div class="label">' + tr('totalStat') + sealStat + '</div><div class="value">+' + totalWithOwned + '</div></div>';
+    html += '<div class="seal-stat-card"><div class="label">' + tr('totalCost') + '</div><div class="value" style="color:#f59e0b;">' +
       (result.totalCost >= 1000 ? (result.totalCost / 1000).toFixed(1) + 'B' : result.totalCost.toFixed(1) + 'M') +
       '</div></div>';
-    html += '<div class="seal-stat-card"><div class="label">Seals Needed</div><div class="value">' + result.seals.length + '</div></div>';
+    html += '<div class="seal-stat-card"><div class="label">' + tr('sealsNeeded') + '</div><div class="value">' + result.seals.length + '</div></div>';
     html += '</div>';
 
     // Progress bar
@@ -1036,7 +1552,7 @@ function initApp() {
     html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--sub-fg);margin-bottom:10px;"><span>0</span><span>Target: ' + target + '</span></div>';
 
     if (result.seals.length > 0) {
-      html += '<div style="font-weight:600;font-size:13px;margin-bottom:6px;">Recommended Seals (by efficiency)</div>';
+      html += '<div style="font-weight:600;font-size:13px;margin-bottom:6px;">' + tr('recommended') + '</div>';
       html += '<div class="list-table-wrap" style="max-height:350px;"><table class="list-table"><thead><tr>';
       html += '<th>#</th><th>Seal</th><th>' + sealStat + '</th><th>Price (M)</th><th>Eff.</th>';
       html += '</tr></thead><tbody>';
@@ -1377,9 +1893,9 @@ function initApp() {
 
     var nextEl = $('#dunitRankNext');
     if (nextTier) {
-      nextEl.textContent = 'Próximo: ' + nextTier.rank + ' (' + nextTier.groups + ' grupos)';
+      nextEl.textContent = tr('dunitRankNext') + nextTier.rank + ' (' + nextTier.groups + tr('dunitGrupos') + ')';
     } else {
-      nextEl.textContent = 'Rank Máximo!';
+      nextEl.textContent = tr('dunitRankMax');
     }
 
     var segPct = 0;
@@ -1400,7 +1916,7 @@ function initApp() {
         statsHtml += '<span class="dunit-stat-chip">+' + stats[k] + unit + ' <small>' + label + '</small></span>';
       });
     } else {
-      statsHtml = '<span style="color:var(--sub-fg);font-size:12px;">Nenhum grupo completado ainda.</span>';
+      statsHtml = '<span style="color:var(--sub-fg);font-size:12px;">' + tr('dunitNoneCompleted') + '</span>';
     }
     $('#dunitStatsAccum').innerHTML = statsHtml;
   }
@@ -1462,9 +1978,9 @@ function initApp() {
       html += '<div class="dunit-conditions">';
       g.conds.forEach(function(c, ci) {
         var checked = duIsCondChecked(g.id, ci);
-        var label = c.t === 'own' ? 'Possuir ' + c.v + ' Digimons' :
-                    c.t === 'lvl' ? 'Nivel total ' + c.v :
-                    'Transcender ' + c.v + ' Digimons';
+        var label = c.t === 'own' ? tr('dunitPossuir') + c.v + tr('dunitDigimons') :
+                    c.t === 'lvl' ? tr('dunitNivelTotal') + c.v :
+                    tr('dunitTranscender') + c.v + tr('dunitDigimons');
         var rewardText = '';
         if (c.re) {
           Object.keys(c.re).forEach(function(k) {

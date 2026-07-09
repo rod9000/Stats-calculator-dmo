@@ -116,6 +116,7 @@ var i18n = {
       dunitDigimons: ' Digimons',
       dunitNivelTotal: 'Nivel total ',
       dunitTranscender: 'Transcender ',
+      dunitElemento: 'Elemento ',
       dunitGrupos: ' grupos',
       okCache: 'OK! (',
       naoEncontrado: 'Nao encontrado: ',
@@ -252,6 +253,7 @@ var i18n = {
       dunitDigimons: ' Digimons',
       dunitNivelTotal: 'Total level ',
       dunitTranscender: 'Transcend ',
+      dunitElemento: 'Element ',
       dunitGrupos: ' groups',
       okCache: 'OK! (',
       naoEncontrado: 'Not found: ',
@@ -388,6 +390,7 @@ var i18n = {
       dunitDigimons: ' Digimons',
       dunitNivelTotal: 'Nivel total ',
       dunitTranscender: 'Trascender ',
+      dunitElemento: 'Elemento ',
       dunitGrupos: ' grupos',
       okCache: '¡OK! (',
       naoEncontrado: 'No encontrado: ',
@@ -1164,13 +1167,13 @@ function initApp() {
       var table = document.createElement('table');
       table.className = 'compare-stats';
       var thead = document.createElement('thead');
-      var tr = document.createElement('tr');
+      var tableRow = document.createElement('tr');
       ['', 'Final', 'Base'].forEach(function(t) {
         var th = document.createElement('th');
         th.textContent = t;
-        tr.appendChild(th);
+        tableRow.appendChild(th);
       });
-      thead.appendChild(tr);
+      thead.appendChild(tableRow);
       table.appendChild(thead);
       var tbody = document.createElement('tbody');
       tbody.id = 'cmpBody-' + i;
@@ -1201,18 +1204,18 @@ function initApp() {
 
     tbody.innerHTML = '';
     STAT_KEYS.forEach(function(sk) {
-      var tr = document.createElement('tr');
+      var tableRow = document.createElement('tr');
       var label = document.createElement('td');
       label.textContent = STAT_LABELS[sk];
       label.style.fontWeight = '600';
-      tr.appendChild(label);
+      tableRow.appendChild(label);
       var finalTd = document.createElement('td');
       finalTd.textContent = dados[sk] || '-';
-      tr.appendChild(finalTd);
+      tableRow.appendChild(finalTd);
       var baseTd = document.createElement('td');
       baseTd.textContent = dados[sk + '_base'] != null ? dados[sk + '_base'] : '-';
-      tr.appendChild(baseTd);
-      tbody.appendChild(tr);
+      tableRow.appendChild(baseTd);
+      tbody.appendChild(tableRow);
     });
   }
 
@@ -1249,13 +1252,13 @@ function initApp() {
 
     DIGIMON_NAMES.forEach(function(name) {
       var dados = DIGIMON_CACHE[name];
-      var tr = document.createElement('tr');
-      if (!dados) tr.className = 'uncached';
+      var tableRow = document.createElement('tr');
+      if (!dados) tableRow.className = 'uncached';
 
       var tdName = document.createElement('td');
       tdName.className = 'name-cell';
       tdName.textContent = name;
-      tr.appendChild(tdName);
+      tableRow.appendChild(tdName);
 
       var fields = ['form', 'hp', 'ds', 'at', 'ct', 'ht', 'de', 'level_cap'];
       fields.forEach(function(f) {
@@ -1265,10 +1268,10 @@ function initApp() {
         } else {
           td.textContent = '---';
         }
-        tr.appendChild(td);
+        tableRow.appendChild(td);
       });
 
-      tbody.appendChild(tr);
+      tbody.appendChild(tableRow);
       if (dados) cached++;
     });
 
@@ -1469,16 +1472,16 @@ function initApp() {
 
     tbody.innerHTML = '';
     list.forEach(function(s) {
-      var tr = document.createElement('tr');
+      var tableRow = document.createElement('tr');
       var owned = sealOwned[s.id] || 0;
-      if (owned > 0) tr.style.background = 'var(--accent-soft)';
-      tr.innerHTML =
+      if (owned > 0) tableRow.style.background = 'var(--accent-soft)';
+      tableRow.innerHTML =
         '<td class="name-cell">' + escapeHtml(s.name) + '</td>' +
         '<td class="sort-right">+' + s.max + '</td>' +
         '<td class="sort-right">' + (s.price > 0 ? s.price.toFixed(1) : '&mdash;') + '</td>' +
         '<td class="sort-right">' + (s.efficiency > 0 ? s.efficiency.toFixed(1) : '&mdash;') + '</td>' +
         '<td><input type="number" class="seal-table-owned" value="' + (owned || '') + '" min="0" data-id="' + s.id + '"></td>';
-      tbody.appendChild(tr);
+      tbody.appendChild(tableRow);
     });
 
     // Owned input handler
@@ -1798,23 +1801,71 @@ function initApp() {
     electric_skill_damage_percent:'Elec SCD', wind_skill_damage_percent:'Wind SCD',
     steel_skill_damage_percent:'Steel SCD', unknown_skill_damage_percent:'Neutral SCD',
     vaccine_skill_damage_percent:'Vaccine SCD', virus_skill_damage_percent:'Virus SCD',
-    data_skill_damage_percent:'Data SCD'
+    data_skill_damage_percent:'Data SCD', earth_skill_damage_percent:'Earth SCD'
   };
 
   var DU_GROUPS = [
-    {id:'AGU_U1',family:'Agumon',cats:['U'],digimons:[{n:'Agumon',r:'N',l:150},{n:'Greymon',r:'N',l:150},{n:'MetalGreymon',r:'N',l:150},{n:'WarGreymon',r:'A+',l:150},{n:'SkullGreymon',r:'S',l:150},{n:'MetalGarurumon',r:'SS+',l:150},{n:'VictoryGreymon',r:'S+',l:150},{n:'Agumon - Bond of Bravery',r:'SSS+',l:150}],conds:[{t:'own',v:8,re:{AT:50}},{t:'lvl',v:960,re:{DE:150}},{t:'trans',v:8,re:{AT:70}},{t:'lvl',v:1200,re:{light_skill_damage_percent:1}}]},
-    {id:'AGU_U2',family:'Agumon',cats:['U'],digimons:[{n:'Agumon',r:'N',l:150},{n:'Greymon',r:'N',l:150},{n:'MetalGreymon',r:'N',l:150},{n:'WarGreymon',r:'A+',l:150},{n:'SkullGreymon',r:'S',l:150},{n:'MetalGarurumon',r:'SS+',l:150},{n:'VictoryGreymon',r:'S+',l:150},{n:'Omegamon Merciful Mode',r:'U',l:150}],conds:[{t:'own',v:8,re:{CT:30}},{t:'lvl',v:1040,re:{HT:50}},{t:'trans',v:8,re:{SCD_percent:1}},{t:'lvl',v:1280,re:{vaccine_skill_damage_percent:2}}]},
-    {id:'AGU_B_U1',family:'Agumon (Black)',cats:['U'],digimons:[{n:'BlackAgumon',r:'N',l:70},{n:'BlackGreymon',r:'N',l:70},{n:'MetalGreymon (Virus)',r:'N',l:70},{n:'BlackWarGreymon',r:'A+',l:70},{n:'Omegamon Zwart',r:'SS',l:70}],conds:[{t:'own',v:5,re:{DS:80}},{t:'lvl',v:550,re:{DS:120}},{t:'trans',v:5,re:{AT:50}},{t:'lvl',v:700,re:{electric_skill_damage_percent:1}}]},
-    {id:'AGU_B_U2',family:'Agumon (Black)',cats:['U'],digimons:[{n:'BlackAgumon',r:'N',l:70},{n:'BlackGreymon',r:'N',l:70},{n:'MetalGreymon (Virus)',r:'N',l:70},{n:'BlackWarGreymon',r:'A+',l:70},{n:'Omegamon Zwart',r:'SS',l:70}],conds:[{t:'own',v:5,re:{HP:200}},{t:'lvl',v:400,re:{AT:30}},{t:'trans',v:5,re:{CT:15}},{t:'lvl',v:560,re:{electric_skill_damage_percent:1}}]},
-    {id:'GABU_U1',family:'Gabumon',cats:['U'],digimons:[{n:'Gabumon',r:'N',l:133},{n:'Garurumon',r:'N',l:133},{n:'WereGarurumon',r:'N',l:133},{n:'MetalGarurumon',r:'A+',l:133},{n:'MetalGarurumon (Virus)',r:'S',l:133},{n:'Omegamon',r:'SS+',l:133}],conds:[{t:'own',v:6,re:{HT:40}},{t:'lvl',v:800,re:{AT:35}},{t:'trans',v:6,re:{CT:20}},{t:'lvl',v:1000,re:{ice_skill_damage_percent:1}}]},
-    {id:'GABU_U2',family:'Gabumon',cats:['U'],digimons:[{n:'Gabumon',r:'N',l:133},{n:'Garurumon',r:'N',l:133},{n:'WereGarurumon',r:'N',l:133},{n:'MetalGarurumon',r:'A+',l:133},{n:'MetalGarurumon (Virus)',r:'S',l:133},{n:'Omegamon',r:'SS+',l:133}],conds:[{t:'own',v:6,re:{DS:60}},{t:'lvl',v:660,re:{HP:150}},{t:'trans',v:6,re:{HT:30}},{t:'lvl',v:880,re:{ice_skill_damage_percent:1}}]},
-    {id:'SALA_U1',family:'Salamon',cats:['U'],digimons:[{n:'Salamon',r:'N',l:120},{n:'Gatomon',r:'N',l:120},{n:'Silphymon',r:'A+',l:120},{n:'MagnaAngemon',r:'S',l:120},{n:'Seraphimon',r:'SS',l:120}],conds:[{t:'own',v:5,re:{DE:40}},{t:'lvl',v:600,re:{CT:15}},{t:'trans',v:5,re:{HT:25}},{t:'lvl',v:800,re:{light_skill_damage_percent:1}}]},
-    {id:'SALA_U2',family:'Salamon',cats:['U'],digimons:[{n:'Salamon',r:'N',l:120},{n:'Gatomon',r:'N',l:120},{n:'Silphymon',r:'A+',l:120},{n:'MagnaAngemon',r:'S',l:120},{n:'Seraphimon',r:'SS',l:120}],conds:[{t:'own',v:5,re:{HP:180}},{t:'lvl',v:500,re:{AT:25}},{t:'trans',v:5,re:{CT:10}},{t:'lvl',v:700,re:{light_skill_damage_percent:1}}]},
-    {id:'PATA_U1',family:'Patamon',cats:['U'],digimons:[{n:'Patamon',r:'N',l:51},{n:'Angemon',r:'N',l:51},{n:'MagnaAngemon',r:'A+',l:51},{n:'Seraphimon',r:'S',l:51}],conds:[{t:'own',v:4,re:{CT:10}},{t:'lvl',v:200,re:{HT:20}},{t:'trans',v:4,re:{DE:30}},{t:'lvl',v:300,re:{light_skill_damage_percent:1}}]},
-    {id:'PALM_U1',family:'Palmon',cats:['U'],digimons:[{n:'Palmon',r:'N',l:100},{n:'Togemon',r:'N',l:100},{n:'Lillymon',r:'A+',l:100},{n:'Rosemon',r:'S',l:100}],conds:[{t:'own',v:4,re:{AT:20}},{t:'lvl',v:400,re:{DE:35}},{t:'trans',v:4,re:{CT:12}},{t:'lvl',v:550,re:{wood_skill_damage_percent:1}}]},
-    {id:'BIYO_U1',family:'Biyomon',cats:['U'],digimons:[{n:'Biyomon',r:'N',l:80},{n:'Birdramon',r:'N',l:80},{n:'Garudamon',r:'A+',l:80},{n:'Phoenixmon',r:'S',l:80}],conds:[{t:'own',v:4,re:{DS:50}},{t:'lvl',v:320,re:{AT:20}},{t:'trans',v:4,re:{HT:15}},{t:'lvl',v:440,re:{fire_skill_damage_percent:1}}]},
-    {id:'GOMA_U1',family:'Gomamon',cats:['U'],digimons:[{n:'Gomamon',r:'N',l:90},{n:'Ikkakumon',r:'N',l:90},{n:'Zudahmon',r:'A+',l:90},{n:'Plesiomon',r:'S',l:90}],conds:[{t:'own',v:4,re:{HP:150}},{t:'lvl',v:360,re:{DS:40}},{t:'trans',v:4,re:{AT:15}},{t:'lvl',v:480,re:{water_skill_damage_percent:1}}]},
-    {id:'TOYA_U1',family:'ToyAgumon',cats:['U'],digimons:[{n:'ToyAgumon',r:'N',l:50},{n:'ToyGreymon',r:'N',l:50},{n:'ToyGarurumon',r:'A+',l:50}],conds:[{t:'own',v:3,re:{HP:80}},{t:'lvl',v:150,re:{DE:20}},{t:'trans',v:3,re:{AT:10}},{t:'lvl',v:200,re:{fire_skill_damage_percent:1}}]}
+    {id:'FANGLO',family:'Fanglo',cats:['U'],digimons:["Qinglongmon", "Zhuqiaomon", "Ebonwumon", "Baihumon", "Fanglo Shin"],conds:[{t:'own',v:5,re:{HP:500}},{t:'lvl',v:560,re:{HP:200}},{t:'trans',v:5,re:{data_skill_damage_percent:2}},{t:'element',v:1,re:{earth_skill_damage_percent:2}}]},
+    {id:'ANGELS',family:'Angels',cats:['U'],digimons:["Seraphimon", "Ophanimon", "Cherubimon"],conds:[{t:'own',v:3,re:{DE:30}},{t:'lvl',v:330,re:{DE:100}},{t:'trans',v:3,re:{light_skill_damage_percent:1}},{t:'element',v:1,re:{vaccine_skill_damage_percent:1}}]},
+    {id:'FALLEN_ANGELS',family:'Fallen Angels',cats:['U'],digimons:["ShadowSeraphimon", "Ophanimon Falldown", "Cherubimon Virus"],conds:[{t:'own',v:3,re:{EV:70}},{t:'lvl',v:330,re:{EV:130}},{t:'trans',v:3,re:{unknown_skill_damage_percent:1}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'ADVENTURE_ROOKIES',family:'Adventure Rookies',cats:['U'],digimons:["Agumon", "Gabumon", "Tentomon", "Gomamon", "Patamon", "Palmon", "Piyomon", "Gatomon"],conds:[{t:'own',v:8,re:{HP:500}},{t:'lvl',v:880,re:{HP:200}},{t:'trans',v:8,re:{vaccine_skill_damage_percent:1}},{t:'element',v:1,re:{light_skill_damage_percent:1}}]},
+    {id:'ADVENTURE_EVOLUTIONS',family:'Adventure Evolutions',cats:['U'],digimons:["Wargreymon", "MetalGarurumon", "MegaKabuterimon", "Zudomon", "Angemon", "Lilymon", "Garudamon", "Angewoman"],conds:[{t:'own',v:8,re:{EXP_percent:50}},{t:'lvl',v:880,re:{SCD_percent:1}},{t:'trans',v:8,re:{virus_skill_damage_percent:1}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'7_DEADLY_SINS',family:'7 Deadly Sins',cats:['U'],digimons:["Lucemon", "Leviamon", "Beelzemon", "Daemon", "Belphemon", "Barbamon", "Lilithmon"],conds:[{t:'own',v:7,re:{EV:30}},{t:'lvl',v:770,re:{DE:100}},{t:'trans',v:7,re:{AT:70}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'ANGEL_CORPS',family:'Angel Corps',cats:['U'],digimons:["Angemon", "MagnaAngemon", "SlashAngemon", "Angewomon"],conds:[{t:'own',v:4,re:{DE:50}},{t:'lvl',v:440,re:{DE:100}},{t:'trans',v:4,re:{vaccine_skill_damage_percent:1}},{t:'element',v:1,re:{fire_skill_damage_percent:1}}]},
+    {id:'CRACK_TEAM',family:'Crack Team',cats:['U'],digimons:["Metalgreymon", "Megadramon", "MetalTyrannomon", "Andromon", "Boltmon"],conds:[{t:'own',v:5,re:{BL:30}},{t:'lvl',v:550,re:{BL:70}},{t:'trans',v:5,re:{data_skill_damage_percent:1}},{t:'element',v:1,re:{steel_skill_damage_percent:1}}]},
+    {id:'BURST_ULTIMATE_WINGS',family:'Burst Ultimate Wings',cats:['U'],digimons:["VictoryGreymon", "TyrantKabuterimon", "Ornismon", "Valdurmon", "Gallantmon Crimson", "Imperialdramon Paladin", "Venom Myotismon", "Lucemon Satan"],conds:[{t:'own',v:8,re:{EV:30}},{t:'lvl',v:880,re:{EV:100}},{t:'trans',v:8,re:{unknown_skill_damage_percent:1}},{t:'element',v:1,re:{wind_skill_damage_percent:1}}]},
+    {id:'CHECKMATE',family:'Checkmate',cats:['U'],digimons:["PawnChessmon (B &W)", "KnightChessmon (B &W)", "RookChessmon", "BishopChessmon KingChessmon", "QueenChessmon"],conds:[{t:'own',v:8,re:{DE:30}},{t:'lvl',v:880,re:{DE:50}},{t:'trans',v:8,re:{CT:50}},{t:'element',v:1,re:{steel_skill_damage_percent:1}}]},
+    {id:'GIGA_WHALE',family:'Giga Whale',cats:['U'],digimons:["Omegamon Merciful", "Miko Mode", "X7 Superior", "Crimson Mode Awaken", "Eosmon U"],conds:[{t:'own',v:5,re:{SCD_percent:5}},{t:'lvl',v:650,re:{AT:5}},{t:'trans',v:5,re:{light_skill_damage_percent:2}},{t:'element',v:1,re:{dark_skill_damage_percent:2}}]},
+    {id:'TWO_GUYS',family:'Two Guys',cats:['U'],digimons:["Pumpkinmon", "Gotsumon"],conds:[{t:'own',v:2,re:{HP:500}},{t:'lvl',v:220,re:{HP:200}},{t:'trans',v:2,re:{CT:20}},{t:'element',v:1,re:{DS:150}}]},
+    {id:'VILLAINS',family:'Villains',cats:['U'],digimons:["Devimon", "Etemon", "Puppetmon", "Machinedramon", "MetalSeadramon", "Piedmon", "Myotismon", "Venom Myotismon"],conds:[{t:'own',v:8,re:{BL:20}},{t:'lvl',v:880,re:{BL:30}},{t:'trans',v:8,re:{HT:50}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'BARE_IN_BLACK_',family:'Bare In Black?',cats:['U'],digimons:["BlackGatomon", "ShadowSeraphimon", "BlackSaintGargomon"],conds:[{t:'own',v:3,re:{EV:30}},{t:'lvl',v:330,re:{EV:70}},{t:'trans',v:3,re:{CT:30}},{t:'element',v:1,re:{virus_skill_damage_percent:1}}]},
+    {id:'BLACK_AGU___GABUS',family:'Black Agu & Gabus',cats:['U'],digimons:["Gabu Zwart", "Garurumon Black", "WereGarurumon Black", "MetalGarurumon Black", "Agumon Zwart", "Greymon Blk", "MetalGreymon Blk", "Wargreymon Blk", "Agumon Blk (Millenium)"],conds:[{t:'own',v:9,re:{DS:150}},{t:'lvl',v:990,re:{DS:150}},{t:'trans',v:9,re:{AT:70}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'GHOST_GAMES',family:'Ghost Games',cats:['U'],digimons:["Gammamon", "Angormon", "Jellymon"],conds:[{t:'own',v:3,re:{EXP_percent:20}},{t:'lvl',v:330,re:{EXP_percent:30}},{t:'trans',v:3,re:{EXP_percent:50}},{t:'element',v:1,re:{wind_skill_damage_percent:1}}]},
+    {id:'GHOST_GAME_2',family:'Ghost Game 2',cats:['U'],digimons:["Siriusmon", "Diarbbitmon", "Amphimon"],conds:[{t:'own',v:3,re:{DS:50}},{t:'lvl',v:330,re:{DS:80}},{t:'trans',v:3,re:{AT:30}},{t:'element',v:1,re:{data_skill_damage_percent:1}}]},
+    {id:'GREEK_LETTERS',family:'Greek Letters',cats:['U'],digimons:["Omegamon", "Gammamon", "Alphamon", "Betamon"],conds:[{t:'own',v:4,re:{HP:50}},{t:'lvl',v:440,re:{HP:100}},{t:'trans',v:4,re:{HP:200}},{t:'element',v:1,re:{water_skill_damage_percent:1}}]},
+    {id:'SKELETON_GANG',family:'Skeleton Gang',cats:['U'],digimons:["SkullSatamon", "SkullMammothmon", "SkullKnightmon"],conds:[{t:'own',v:3,re:{DS:50}},{t:'lvl',v:330,re:{DS:80}},{t:'trans',v:3,re:{AT:30}},{t:'element',v:1,re:{earth_skill_damage_percent:1}}]},
+    {id:'PRIMAL',family:'Primal',cats:['U'],digimons:["Sharmamon", "Goblimon", "Apemon", "Ogremon"],conds:[{t:'own',v:4,re:{DS:30}},{t:'lvl',v:440,re:{DE:50}},{t:'trans',v:4,re:{CT:20}},{t:'element',v:1,re:{unknown_skill_damage_percent:1}}]},
+    {id:'TREES',family:'Trees',cats:['U'],digimons:["Woodmon", "Tanemon", "Palmon", "Floramon", "Blossomon", "Cherrymon"],conds:[{t:'own',v:6,re:{HP:50}},{t:'lvl',v:660,re:{HP:100}},{t:'trans',v:6,re:{HP:200}},{t:'element',v:1,re:{wood_skill_damage_percent:1}}]},
+    {id:'02_JOGRESS_ROOKIES',family:'02 Jogress Rookies',cats:['U'],digimons:["Gatomon", "Patamon", "Patamon(Jogress)", "Veemon(Imperialdramon)", "Veemon(jogress)", "Hawkmon(Jogress)", "Wormon(jogress)", "Armadimon(jogress)"],conds:[{t:'own',v:8,re:{EXP_percent:20}},{t:'lvl',v:880,re:{EXP_percent:30}},{t:'trans',v:8,re:{EXP_percent:50}},{t:'element',v:1,re:{wood_skill_damage_percent:1}}]},
+    {id:'02_JOGRESS_EVOLUTIONS',family:'02 Jogress Evolutions',cats:['U'],digimons:["Shakkoumon", "Imperialdramon Dragon", "Silphymon"],conds:[{t:'own',v:3,re:{EV:30}},{t:'lvl',v:330,re:{EV:130}},{t:'trans',v:3,re:{data_skill_damage_percent:1}},{t:'element',v:1,re:{light_skill_damage_percent:1}}]},
+    {id:'DARK_EVOLUTION',family:'Dark Evolution',cats:['U'],digimons:["Cherubimon", "ShadowSeraphimon", "Wendigomon", "Ophanimon Falldown", "Megidramon", "Raguelmon"],conds:[{t:'own',v:6,re:{EXP_percent:20}},{t:'lvl',v:660,re:{EXP_percent:30}},{t:'trans',v:6,re:{EXP_percent:50}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'LADIES',family:'Ladies',cats:['U'],digimons:["LordKnightmon", "Lilymon", "Miko Mode", "QueenChessmon", "Angewomon", "Lilithmon", "Lotusmon"],conds:[{t:'own',v:7,re:{BL:30}},{t:'lvl',v:790,re:{vaccine_skill_damage_percent:1}},{t:'trans',v:7,re:{SCD_percent:1}},{t:'element',v:1,re:{data_skill_damage_percent:1}}]},
+    {id:'DUDES',family:'Dudes',cats:['U'],digimons:["Angemon", "MetalEtemon", "Beelze Shin", "Gankoomon", "Justimon", "Leomon", "Myotismon", "Baalmon", "Astamon"],conds:[{t:'own',v:9,re:{EV:30}},{t:'lvl',v:1000,re:{EV:70}},{t:'trans',v:9,re:{CT:30}},{t:'element',v:1,re:{unknown_skill_damage_percent:1}}]},
+    {id:'GREYMONS',family:'Greymons',cats:['U'],digimons:["Greymon", "Greymon Black", "KaiserGreymon", "MetalGreymon (c)", "MailBirdramon"],conds:[{t:'own',v:5,re:{HP:50}},{t:'lvl',v:550,re:{HP:100}},{t:'trans',v:5,re:{HP:200}},{t:'element',v:1,re:{fire_skill_damage_percent:1}}]},
+    {id:'GARURUMON',family:'Garurumon',cats:['U'],digimons:["Garurumon", "Garurumon Black", "MagnaGarurumon"],conds:[{t:'own',v:3,re:{DS:50}},{t:'lvl',v:330,re:{DS:80}},{t:'trans',v:3,re:{AT:30}},{t:'element',v:1,re:{ice_skill_damage_percent:1}}]},
+    {id:'M_O_D_E',family:'M O D E',cats:['U'],digimons:["Beelze Blast Mode", "ImperialDramon Fighter Mode", "ImperialDramon Paladin Mode", "Ophanimon Falldown Mode", "Meicrackmon Vicious Mode", "Demon Beast Mode", "Belphemon Rage Mode", "Omegamon Merciful Mode", "Sakuyamon Miko Mode", "ShoutmonX7 Superior Mode", "Lucemon Satan Mode"],conds:[{t:'own',v:11,re:{BL:30}},{t:'lvl',v:1270,re:{EV:100}},{t:'trans',v:11,re:{SCD_percent:3}},{t:'element',v:1,re:{AT:2}}]},
+    {id:'BUGS',family:'Bugs',cats:['U'],digimons:["Tentomon", "Kunemon", "Dokunemon", "Wormon", "Wormon (Jogress)", "Waspmon"],conds:[{t:'own',v:6,re:{DE:30}},{t:'lvl',v:660,re:{DE:50}},{t:'trans',v:6,re:{CT:50}},{t:'element',v:1,re:{wood_skill_damage_percent:1}}]},
+    {id:'ADVANCED_SPIRIT_EVO',family:'Advanced Spirit Evo',cats:['U'],digimons:["KaiserGreymon", "MagnaGarurumon", "Susanomon"],conds:[{t:'own',v:3,re:{EV:30}},{t:'lvl',v:340,re:{EV:70}},{t:'trans',v:3,re:{CT:30}},{t:'element',v:1,re:{electric_skill_damage_percent:1}}]},
+    {id:'OMEGA__VA',family:'Omega: VA',cats:['U'],digimons:["Omegamon", "Zwart", "Alter S"],conds:[{t:'own',v:3,re:{BL:30}},{t:'lvl',v:330,re:{SCD_percent:1}},{t:'trans',v:3,re:{vaccine_skill_damage_percent:1}},{t:'element',v:1,re:{virus_skill_damage_percent:1}}]},
+    {id:'OMEGA__VI',family:'Omega: VI',cats:['U'],digimons:["Zwart D", "Alter B"],conds:[{t:'own',v:2,re:{BL:30}},{t:'lvl',v:240,re:{EXP_percent:50}},{t:'trans',v:2,re:{vaccine_skill_damage_percent:1}},{t:'element',v:1,re:{virus_skill_damage_percent:2}}]},
+    {id:'UNDER_SEA',family:'Under Sea',cats:['U'],digimons:["Geckomon", "Whamon", "Lanamon", "MegaSeadramon", "Gesomon", "Zudomon", "Jellymon"],conds:[{t:'own',v:7,re:{EXP_percent:20}},{t:'lvl',v:770,re:{EXP_percent:30}},{t:'trans',v:7,re:{EXP_percent:50}},{t:'element',v:1,re:{water_skill_damage_percent:1}}]},
+    {id:'HYBRID_H',family:'Hybrid H',cats:['U'],digimons:["Agnimon", "Fairimon", "Chakkumon", "Arbormon", "Grotmon", "Wolfmon", "Blitzmon", "Lanamon", "Mercuremon", "KaiserGreymon", "MagnaGarurumon"],conds:[{t:'own',v:11,re:{HP:50}},{t:'lvl',v:1210,re:{HP:100}},{t:'trans',v:11,re:{HP:200}},{t:'element',v:1,re:{fire_skill_damage_percent:1}}]},
+    {id:'HYBRID_B',family:'Hybrid B',cats:['U'],digimons:["Vritramon", "Shutsmon", "Blizzarmon", "Petaldramon", "Gigasmon", "Garmmon", "Bolgmon", "Calamaramon", "Sefirotmon", "KaiserLeomon", "Lowemon"],conds:[{t:'own',v:11,re:{DS:150}},{t:'lvl',v:1210,re:{DS:150}},{t:'trans',v:11,re:{AT:70}},{t:'element',v:1,re:{fire_skill_damage_percent:1}}]},
+    {id:'CAPSUL',family:'Capsul',cats:['U'],digimons:["Allomon", "Digmon", "Flamedramon", "Flybeemon", "Gargoylemon", "Goatmon", "Halsemon", "Magnamon", "Nefertimon", "Pegasusmon", "Raidramon", "Shurimon", "Submarimon", "Toucanmon", "Yasyamon"],conds:[{t:'own',v:15,re:{EV:30}},{t:'lvl',v:1650,re:{EV:70}},{t:'trans',v:15,re:{CT:30}},{t:'element',v:1,re:{vaccine_skill_damage_percent:1}}]},
+    {id:'DOG_',family:'Dog?',cats:['U'],digimons:["Doggymon", "Dobermon", "Cerberusmon", "Anubismon?"],conds:[{t:'own',v:4,re:{DE:30}},{t:'lvl',v:440,re:{DE:50}},{t:'trans',v:4,re:{CT:20}},{t:'element',v:1,re:{unknown_skill_damage_percent:1}}]},
+    {id:'CAT_',family:'Cat?',cats:['U'],digimons:["Gatomon", "BlackGatomon", "Meicoomon"],conds:[{t:'own',v:3,re:{EXP_percent:20}},{t:'lvl',v:330,re:{EXP_percent:30}},{t:'trans',v:3,re:{EXP_percent:50}},{t:'element',v:1,re:{unknown_skill_damage_percent:1}}]},
+    {id:'HIGH_NOON',family:'High Noon',cats:['U'],digimons:["Deputymon", "Starmon", "SuperStarmon"],conds:[{t:'own',v:3,re:{BL:20}},{t:'lvl',v:330,re:{BL:30}},{t:'trans',v:3,re:{HT:30}},{t:'element',v:1,re:{data_skill_damage_percent:1}}]},
+    {id:'TRANSCENDENTAL_WINGS_1',family:'Transcendental Ultimate Wings 1',cats:['U'],digimons:["Boltboutamon", "Mastemon"],conds:[{t:'own',v:2,re:{HP:50}},{t:'lvl',v:220,re:{CT:20}},{t:'trans',v:2,re:{AT:1}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'TRANSCENDENTAL_WINGS_2',family:'Transcendental Ultimate Wings 2',cats:['U'],digimons:["Lucemon Satanmode", "Valkyrimon", "Megidramon"],conds:[{t:'own',v:3,re:{EXP_percent:20}},{t:'lvl',v:330,re:{EXP_percent:20}},{t:'trans',v:3,re:{EXP_percent:30}},{t:'element',v:1,re:{vaccine_skill_damage_percent:1}}]},
+    {id:'ONLY_REAL_ONES_',family:'Only Real Ones?',cats:['U'],digimons:["Susanomon Shin", "Crimson Mode Shin", "Lucemon Shin", "Gallantmon Shin", "Gargomon Shin", "Beelze Shin", "Sakuyamon Shin", "AOA", "Fanglo Shin", "Fighter Mode Shin", "Rage Mode"],conds:[{t:'own',v:11,re:{AT:100}},{t:'lvl',v:1330,re:{dark_skill_damage_percent:1}},{t:'trans',v:11,re:{SCD_percent:2}},{t:'element',v:1,re:{AT:1}}]},
+    {id:'TAMERS',family:'Tamers',cats:['U'],digimons:["Guilmon", "Renamon", "Terriermon", "Gardromon", "Lopmon", "Leomon", "Marine Angemon", "Impmon", "Cyberdramon"],conds:[{t:'own',v:9,re:{HP:50}},{t:'lvl',v:990,re:{HP:100}},{t:'trans',v:9,re:{HP:200}},{t:'element',v:1,re:{fire_skill_damage_percent:1}}]},
+    {id:'TAMERS_EVOLUTIONS',family:'Tamers Evolutions',cats:['U'],digimons:["Gallantmon", "Sakuyamon", "St.Gargomon", "Leomon", "Justimon", "Marine Angemon", "Antylamon", "Andromon", "Beelze Blast Mode"],conds:[{t:'own',v:9,re:{DE:30}},{t:'lvl',v:990,re:{CT:30}},{t:'trans',v:9,re:{AT:70}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'BONDS',family:'Bonds',cats:['U'],digimons:["Gabumon Bond of Friendship", "Agumon Bond of Bravery"],conds:[{t:'own',v:2,re:{BL:30}},{t:'lvl',v:240,re:{AT:70}},{t:'trans',v:2,re:{AT:1}},{t:'element',v:1,re:{fire_skill_damage_percent:1}}]},
+    {id:'VARIANTS',family:'Variants',cats:['U'],digimons:["Armageddemon (Conflation)", "Ogudomon (Weaken)", "Ogudomon", "Apocalymon (Psychic)"],conds:[{t:'own',v:4,re:{DE:30}},{t:'lvl',v:450,re:{DE:50}},{t:'trans',v:4,re:{CT:20}},{t:'element',v:1,re:{virus_skill_damage_percent:1}}]},
+    {id:'SOLDIERS',family:'Soldiers',cats:['U'],digimons:["Tankdramon", "Sparrowmon"],conds:[{t:'own',v:2,re:{HP:50}},{t:'lvl',v:220,re:{HP:100}},{t:'trans',v:2,re:{HP:200}},{t:'element',v:1,re:{unknown_skill_damage_percent:1}}]},
+    {id:'LEOMONS',family:'Leomons',cats:['U'],digimons:["Leomon", "Panjyamon", "SaberLeomon", "BanchouLeomon", "GrapLeomon", "KaiserLeomon", "Leomon (Event?)"],conds:[{t:'own',v:7,re:{HP:50}},{t:'lvl',v:770,re:{HP:100}},{t:'trans',v:7,re:{HP:200}},{t:'element',v:1,re:{vaccine_skill_damage_percent:1}}]},
+    {id:'DUKE',family:'Duke',cats:['U'],digimons:["Gallantmon", "Gallantmon Shin", "Gallantmon Crimson Mode Shin", "ChaosGallantmon", "Gallantmon Crimson Mode", "MedievalGallantmon"],conds:[{t:'own',v:6,re:{HT:30}},{t:'lvl',v:690,re:{BL:50}},{t:'trans',v:6,re:{HT:50}},{t:'element',v:1,re:{light_skill_damage_percent:1}}]},
+    {id:'RESISTANCE',family:'Resistance',cats:['U'],digimons:["Silphymon", "Wizardmon", "Mushroomon"],conds:[{t:'own',v:3,re:{EXP_percent:20}},{t:'lvl',v:330,re:{EXP_percent:20}},{t:'trans',v:3,re:{EXP_percent:30}},{t:'element',v:1,re:{wind_skill_damage_percent:1}}]},
+    {id:'XROS_WARS',family:'Xros Wars',cats:['U'],digimons:["Shoutmon", "Dorulumon", "Ballistamon", "Starmons", "Greymon (c)?", "Mailbirdramon", "Sparrowmon", "Mervamon"],conds:[{t:'own',v:8,re:{BL:30}},{t:'lvl',v:880,re:{DE:100}},{t:'trans',v:8,re:{AT:70}},{t:'element',v:1,re:{unknown_skill_damage_percent:1}}]},
+    {id:'BAGRA_LEADERS',family:'Bagra Leaders',cats:['U'],digimons:["DarkKnightmon", "Bagramon", "DarknessBagramon", "Lilithmon"],conds:[{t:'own',v:4,re:{BL:30}},{t:'lvl',v:450,re:{AT:30}},{t:'trans',v:4,re:{CT:20}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'BAGRA_ARMY_MEMBERS',family:'Bagra Army Members',cats:['U'],digimons:["Lucemon Satanmode", "Fanglomon", "IceDevimon", "Machinedramon", "Andromon", "Skullmeramon", "Neptunemon", "MetalTyrannomon", "Arkadimon Ultimate"],conds:[{t:'own',v:10,re:{BL:20}},{t:'lvl',v:1100,re:{BL:30}},{t:'trans',v:10,re:{HT:50}},{t:'element',v:1,re:{vaccine_skill_damage_percent:1}}]},
+    {id:'02_VILLAINS_',family:'02 Villains?',cats:['U'],digimons:["Arukenimon", "Wargreymon Black", "Demon", "MaloMyotismon"],conds:[{t:'own',v:4,re:{BL:20}},{t:'lvl',v:440,re:{BL:30}},{t:'trans',v:4,re:{HT:30}},{t:'element',v:1,re:{dark_skill_damage_percent:1}}]},
+    {id:'FRONTIER_VILLAINS_',family:'Frontier Villains?',cats:['U'],digimons:["Cherubimon", "Phantomon", "Lucemon", "Lucemon Falldown", "Lucemon Satan", "LordKnightmon", "Dynasmon"],conds:[{t:'own',v:7,re:{BL:20}},{t:'lvl',v:770,re:{BL:30}},{t:'trans',v:7,re:{HT:50}},{t:'element',v:1,re:{virus_skill_damage_percent:1}}]},
+    {id:'DARK_MASTERS',family:'Dark Masters',cats:['U'],digimons:["Piedmon", "Metal Seadramon", "Machinedramon", "Puppetmon"],conds:[{t:'own',v:4,re:{EXP_percent:20}},{t:'lvl',v:440,re:{EXP_percent:20}},{t:'trans',v:4,re:{EXP_percent:30}},{t:'element',v:1,re:{unknown_skill_damage_percent:1}}]},
+    {id:'SOMETHING_VACCINE',family:'Cavaleiro da Vacina',cats:['U'],digimons:["Susanomon", "Omegamon Zwart", "Magnamon"],conds:[{t:'own',v:3,re:{BL:30}},{t:'lvl',v:320,re:{EV:100}},{t:'trans',v:3,re:{light_skill_damage_percent:1}},{t:'element',v:1,re:{vaccine_skill_damage_percent:1}}]},
+    {id:'ROYAL_KNIGHTS',family:'Cavaleiros Reais',cats:['U'],digimons:["Omegamon", "Alphamon Ouryuken", "Examon", "Gallantmon", "UlforceVeedramon", "Magnamon", "Dynasmon", "Lordknightmon", "Sleipmon", "Craniamon", "Duftmon", "Gankoomon", "Jessmon"],conds:[{t:'own',v:13,re:{BL:30}},{t:'lvl',v:1300,re:{EV:100}},{t:'trans',v:13,re:{vaccine_skill_damage_percent:1}},{t:'element',v:1,re:{light_skill_damage_percent:1}}]},
+    {id:'ORDINE',family:'Ordine',cats:['U'],digimons:["Ordinemon", "Ordinemon(Awaken)"],conds:[{t:'own',v:2,re:{CT:20}},{t:'lvl',v:240,re:{HP:100}},{t:'trans',v:2,re:{EXP_percent:50}},{t:'element',v:1,re:{unknown_skill_damage_percent:1}}]},
+    {id:'MIRACLE__WAKE_UP_',family:'Miracle, Wake Up!',cats:['U'],digimons:["Angemon", "Angewomon", "Wargreymon(Awaken)", "MetalGarurumon(Awaken)"],conds:[{t:'own',v:4,re:{EXP_percent:30}},{t:'lvl',v:460,re:{HT:30}},{t:'trans',v:4,re:{data_skill_damage_percent:1}},{t:'element',v:1,re:{vaccine_skill_damage_percent:1}}]}
   ];
 
   var DU_COMPLETED_KEY = 'dunit.completed';
@@ -1966,12 +2017,18 @@ function initApp() {
 
       html += '<div class="dunit-digimon-list">';
       g.digimons.forEach(function(d) {
-        var rc = DU_RANK_COLORS[d.r] || DU_RANK_COLORS.N;
-        html += '<div class="dunit-digi">';
-        html += '<span class="dunit-digi-name">' + d.n + '</span>';
-        html += '<span class="dunit-digi-rank" style="background:' + rc.bg + ';color:' + rc.text + ';">' + d.r + '</span>';
-        html += '<span class="dunit-digi-lv">Lv.' + d.l + '</span>';
-        html += '</div>';
+        if (typeof d === 'string') {
+          html += '<div class="dunit-digi">';
+          html += '<span class="dunit-digi-name">' + d + '</span>';
+          html += '</div>';
+        } else {
+          var rc = DU_RANK_COLORS[d.r] || DU_RANK_COLORS.N;
+          html += '<div class="dunit-digi">';
+          html += '<span class="dunit-digi-name">' + d.n + '</span>';
+          html += '<span class="dunit-digi-rank" style="background:' + rc.bg + ';color:' + rc.text + ';">' + d.r + '</span>';
+          html += '<span class="dunit-digi-lv">Lv.' + d.l + '</span>';
+          html += '</div>';
+        }
       });
       html += '</div>';
 
@@ -1980,6 +2037,7 @@ function initApp() {
         var checked = duIsCondChecked(g.id, ci);
         var label = c.t === 'own' ? tr('dunitPossuir') + c.v + tr('dunitDigimons') :
                     c.t === 'lvl' ? tr('dunitNivelTotal') + c.v :
+                    c.t === 'element' ? tr('dunitElemento') + c.v :
                     tr('dunitTranscender') + c.v + tr('dunitDigimons');
         var rewardText = '';
         if (c.re) {

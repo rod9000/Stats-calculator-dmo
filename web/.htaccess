@@ -1,6 +1,8 @@
 RewriteEngine On
 
-RewriteRule ^api/search$ api.php [QSA,L]
-
+# Force HTTPS
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# API route
+RewriteRule ^api/search$ api.php [QSA,L]

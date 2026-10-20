@@ -1,7 +1,10 @@
 import re
 import sys
-import tkinter as tk
-from tkinter import ttk, messagebox
+try:
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+except ImportError:  # ambiente headless (ex.: servidor web no Railway)
+    tk = ttk = messagebox = None
 import requests
 from bs4 import BeautifulSoup
 import threading
@@ -521,6 +524,8 @@ def parse_wiki_table(html):
 
 
 def _save_debug_html(label, html):
+    if os.environ.get("DMO_NO_DEBUG_HTML"):
+        return
     try:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"_wiki_{label}.html")
         with open(path, "w", encoding="utf-8") as f:

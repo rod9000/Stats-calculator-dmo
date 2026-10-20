@@ -2,12 +2,14 @@
 Servidor HTTP para a Calculadora DMO Web.
 Fornece busca ao vivo (dmowiki/Wayback) via API.
 
-Uso: python server.py
+Uso: python server.py [porta]
 Depois abrir http://localhost:5000
+
+No Railway a porta vem da variavel de ambiente PORT.
 """
 
 import sys, os, json
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 # Add py/ to path so we can import calculadora_dmo
@@ -23,10 +25,14 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/health":
+            self._json({"status": "ok"})
+            return
         if parsed.path == "/api/search":
             qs = parse_qs(parsed.query)
             name = (qs.get("name") or [""])[0].strip()
-            if not name:
+            # "_ping_" e usado pelo app.js (checkServer) e deve responder 400 rapido
+            if not name or name == "_ping_":
                 self._json({"error": "missing name"}, 400)
                 return
             try:
@@ -63,8 +69,8 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
-    server = HTTPServer(("0.0.0.0", port), Handler)
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 5000))
+    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(f"Servidor rodando em http://localhost:{port}")
     print("Pressione Ctrl+C para parar.")
     try:

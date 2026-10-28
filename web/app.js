@@ -1589,7 +1589,9 @@ function initApp() {
     { id:'colo', name:'COLO', full:'Colosseum Hard', boss:140, ctReq:418, htReq:21111, tier:'mid', desc:'O dungeon Colosseum exige alto hit-rate para acertar consistentemente inimigos evasivos.' },
     { id:'mdg', name:'MDG', full:'MetalGreymon Dungeon', boss:150, ctReq:451, htReq:21000, tier:'hard', desc:'Dungeon tier hard com boss no N&iacute;vel 150. Exige stats acumulados fortes para superar a diferen&ccedil;a de n&iacute;vel.' },
     { id:'gulus_easy', name:'Gulus Easy', full:'Gulus Dungeon (Easy)', boss:150, ctReq:422.4, htReq:22000, tier:'hard', desc:'Modo Easy do Gulus &mdash; ainda exige altos stats. Portal para o conte&uacute;do mais dif&iacacute;cil do DMO.' },
-    { id:'gulus', name:'Gulus', full:'Gulus Dungeon', boss:160, ctReq:533, htReq:28452, tier:'extreme', desc:'O p&iacute;ncaro do conte&uacute;do endgame do DMO. Boss N&iacute;vel 160 cria penalidades severas para jogadores abaixo do n&iacute;vel.' }
+    { id:'gulus', name:'Gulus', full:'Gulus Dungeon', boss:160, ctReq:533, htReq:28452, tier:'extreme', desc:'O p&iacute;ncaro do conte&uacute;do endgame do DMO. Boss N&iacute;vel 160 cria penalidades severas para jogadores abaixo do n&iacute;vel.' },
+    { id:'gulus_hard', name:'Gulus Hard', full:'GulusGammamon [Hard]', boss:160, ctReq:600, htReq:34000, tier:'extreme', desc:'Vers&atilde;o Hard do Gulus. Exige HP 140-150k+, DPS 1kk+ por segundo e Digimons Rank U ou SSS+ de tier m&aacute;ximo. Buffs do Shadow Lab s&atilde;o altamente recomendados.' },
+    { id:'belial', name:'Belial', full:'BelialVamdemon Dungeon (Belial Lair)', boss:170, ctReq:0, htReq:38000, tier:'extreme', desc:'Recomendado Lv.171+ e HP 180k+. Foco em Skill Damage + Attribute Damage: ataques normais d&atilde;o miss pelo HT do boss. HT 28-29k basta apenas para limpar os summons.' }
   ];
 
   var DG_BRACKETS = [
@@ -1674,7 +1676,9 @@ function initApp() {
     // CT bar
     html += '<div class="dgcalc-dg-statbar">';
     html += '<div class="dgcalc-dg-bar-header"><span>Critical (CT)</span>';
-    if (hasResult) {
+    if (dungeon.ctReq <= 0) {
+      html += '<span>N/A (foco em Skill)</span>';
+    } else if (hasResult) {
       html += '<span><span class="dgcalc-dg-eff">' + result.effectiveCT.toFixed(2) + '</span> / ' + dungeon.ctReq.toFixed(2) + ' <span class="dgcalc-dg-diff-text" data-pass="' + result.ctPasses + '">(' + dgFormatDiff(result.ctDiff) + ')</span></span>';
     } else {
       html += '<span>Need ' + dungeon.ctReq.toFixed(2) + '</span>';

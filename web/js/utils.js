@@ -7,6 +7,7 @@ export function el(tag, className, text) {
   if (text !== undefined) e.textContent = text;
   return e;
 }
+
 export function escapeHtml(s) {
   var d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML;
 }

@@ -4,17 +4,30 @@
 //   tier             entry | mid | hard | extreme
 //   boss             nivel do boss (numero)
 //   bossEstimated    opcional (true): o nivel do boss e uma estimativa; o card mostra "~"
-//   htReq           Hit Rate exigido (numero > 0)
+//   htReq            Hit Rate exigido (numero > 0)
 //   ctReq            Critical Rate exigido (numero > 0) ou null quando CT nao se aplica
 //   hpReq, dpsReq    opcionais (numero > 0): so sao avaliados se o jogador informar HP / DPS
 //   recommendedLevel, desc, build   opcionais (texto)
 //   notes            opcional (lista de textos)
+//
+// Dificuldade: a lista e ordenada pelo tier (entry < mid < hard < extreme) e, dentro de cada tier, pela
+// ordem em que as dungeons aparecem neste arquivo: da mais facil para a mais dificil.
 export var TIERS = {
   entry:   { label: 'Entry',   color: '#3b82f6' },
   mid:     { label: 'Mid',     color: '#f59e0b' },
   hard:    { label: 'Hard',    color: '#f97316' },
   extreme: { label: 'Extreme', color: '#ef4444' }
 };
+
+// Da mais facil para a mais dificil (estavel: dungeons do mesmo tier mantem a ordem do arquivo)
+export function byDifficulty(dungeons) {
+  var rank = {};
+  Object.keys(TIERS).forEach(function(k, i) { rank[k] = i; });
+  return dungeons
+    .map(function(d, i) { return { d: d, i: i }; })
+    .sort(function(a, b) { return rank[a.d.tier] - rank[b.d.tier] || a.i - b.i; })
+    .map(function(x) { return x.d; });
+}
 
 function isNum(v) { return typeof v === 'number' && isFinite(v); }
 function isText(v) { return typeof v === 'string' && v !== ''; }

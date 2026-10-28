@@ -11,14 +11,19 @@
       "desc": "Dungeon endgame de entrada. Melhor ponto de começar antes de conteúdo intermediário."
     },
     {
-      "id": "susano",
-      "name": "Susano",
-      "full": "Susanoomon Dungeon",
+      "id": "chimera_easy",
+      "name": "Chimera Easy",
+      "full": "Chimera Dungeon (Easy)",
       "tier": "mid",
-      "boss": 140,
-      "ctReq": 418,
-      "htReq": 18000,
-      "desc": "Dungeon intermediária com Susanoomon como boss final. Exige gear sólido e coordenação em party."
+      "boss": 165,
+      "bossEstimated": true,
+      "ctReq": 380,
+      "htReq": 16500,
+      "dpsReq": 200000,
+      "desc": "Modo Easy da Chimera.",
+      "notes": [
+        "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
+      ]
     },
     {
       "id": "rbh",
@@ -29,6 +34,16 @@
       "ctReq": 410,
       "htReq": 17000,
       "desc": "Royal Base em modo Hard. Requisitos similares ao Susano com limiares de stat diferentes."
+    },
+    {
+      "id": "susano",
+      "name": "Susano",
+      "full": "Susanoomon Dungeon",
+      "tier": "mid",
+      "boss": 140,
+      "ctReq": 418,
+      "htReq": 18000,
+      "desc": "Dungeon intermediária com Susanoomon como boss final. Exige gear sólido e coordenação em party."
     },
     {
       "id": "colo",
@@ -52,21 +67,6 @@
       "desc": "Modo Easy do Gulus — ainda exige altos stats. Portal para o conteúdo mais difícil do DMO."
     },
     {
-      "id": "chimera_easy",
-      "name": "Chimera Easy",
-      "full": "Chimera Dungeon (Easy)",
-      "tier": "mid",
-      "boss": 165,
-      "bossEstimated": true,
-      "ctReq": 380,
-      "htReq": 16500,
-      "dpsReq": 200000,
-      "desc": "Modo Easy da Chimera.",
-      "notes": [
-        "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
-      ]
-    },
-    {
       "id": "mdg",
       "name": "MDG",
       "full": "MetalGreymon Dungeon",
@@ -75,17 +75,6 @@
       "ctReq": 451,
       "htReq": 21000,
       "desc": "Dungeon tier hard com boss no Nível 150. Exige stats acumulados fortes para superar a diferença de nível."
-    },
-    {
-      "id": "gulus",
-      "name": "Gulus",
-      "full": "Gulus Dungeon",
-      "tier": "hard",
-      "boss": 160,
-      "ctReq": 533,
-      "htReq": 28452,
-      "dpsReq": 700000,
-      "desc": "O píncaro do conteúdo endgame do DMO. Boss Nível 160 cria penalidades severas para jogadores abaixo do nível."
     },
     {
       "id": "chimera_normal",
@@ -101,6 +90,17 @@
       "notes": [
         "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
       ]
+    },
+    {
+      "id": "gulus",
+      "name": "Gulus",
+      "full": "Gulus Dungeon",
+      "tier": "hard",
+      "boss": 160,
+      "ctReq": 533,
+      "htReq": 28452,
+      "dpsReq": 700000,
+      "desc": "O píncaro do conteúdo endgame do DMO. Boss Nível 160 cria penalidades severas para jogadores abaixo do nível."
     },
     {
       "id": "dark_web",
@@ -119,6 +119,43 @@
         "Pré-requisitos: missão Network Error (Central do DATS) e Digimon nível 150 ou superior. Grupo máximo: 2.",
         "Estratégia alternativa: usar Golemon/Goldmon com Mystic Bell (Stun) para mitigar os status exigidos.",
         "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
+      ]
+    },
+    {
+      "id": "barbamon",
+      "name": "Barbamon",
+      "full": "Sanctuary of the Seven Demon Lords: Barbamon",
+      "tier": "extreme",
+      "boss": 178,
+      "ctReq": 600,
+      "htReq": 28500,
+      "hpReq": 200000,
+      "desc": "Dungeon end-game lançada junto com o sistema de Overclock. Chefe final: Barbamon (Demon Lord of Greed).",
+      "notes": [
+        "HP: 200,000+ (altamente recomendado ter suporte / Lucemon ou mecânicas de proteção no grupo).",
+        "O chefe tem mecânicas de dano massivo (instakill): exige alto DPS (Triple DPS no grupo) para pular fases, ou um jogador focado em proteger o time.",
+        "Pode surgir o Barbamon X como chefe secreto, necessário para missões de títulos especiais.",
+        "Acesso: D-Terminal, pelo NPC Alphamon / Dungeon Guide. Pré-requisitos: missão The Seven Demon Lords' Resurgence: Greed e Digimon nível 170 ou superior.",
+        "Grupo máximo: 4. Limite de tempo: 20 minutos. Limite de entradas: 8 por dia."
+      ]
+    },
+    {
+      "id": "belphemon",
+      "name": "Belphemon",
+      "full": "Sanctuary of the Seven Demon Lords: Belphemon",
+      "tier": "extreme",
+      "boss": 178,
+      "ctReq": 600,
+      "htReq": 28500,
+      "hpReq": 180000,
+      "desc": "Chefe final: Belphemon (Demon Lord of Sloth and Rampage). Diferente do Barbamon, que usa armadilhas, foca em destruição pura.",
+      "notes": [
+        "HP: 180,000 a 200,000+. O chefe tem um nuke em área massivo que dá instakill se o time estiver sem buffs de proteção.",
+        "Foco da equipe: DPS extremo + suporte perfeito (buffs de Miko coordenados, como dupla Miko) para não tomar one tap.",
+        "Círculo amarelo: não causa dano, mas se alguém do grupo for atingido, cura o chefe em 2% a 3% por jogador afetado.",
+        "Atacar o círculo amarelo tem chance de invocar o chefe secreto Belphemon Sleep Mode, necessário para o título secreto da masmorra.",
+        "Recompensa: materiais para criar e aprimorar a Sloth Bracelet (Pulseira da Preguiça) até o +10.",
+        "Acesso: Terminal das Chamas (Flame Terminal), pelo NPC Alphamon (Royal Knights). Pré-requisitos: ter completado antes a DG do Barbamon, missão The Seven Demon Lords' Resurgence: Sloth e Digimon nível 170 ou superior. Grupo máximo: 4."
       ]
     },
     {
@@ -159,43 +196,6 @@
         "Acesso: D-Terminal, pelo NPC Dungeon Guide Izzy.",
         "Pré-requisitos: missão Anomaly (pré-requisito: To DATS Center) e Digimon nível 160 ou superior. Grupo máximo: 4.",
         "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
-      ]
-    },
-    {
-      "id": "barbamon",
-      "name": "Barbamon",
-      "full": "Sanctuary of the Seven Demon Lords: Barbamon",
-      "tier": "extreme",
-      "boss": 178,
-      "ctReq": 600,
-      "htReq": 28500,
-      "hpReq": 200000,
-      "desc": "Dungeon end-game lançada junto com o sistema de Overclock. Chefe final: Barbamon (Demon Lord of Greed).",
-      "notes": [
-        "HP: 200,000+ (altamente recomendado ter suporte / Lucemon ou mecânicas de proteção no grupo).",
-        "O chefe tem mecânicas de dano massivo (instakill): exige alto DPS (Triple DPS no grupo) para pular fases, ou um jogador focado em proteger o time.",
-        "Pode surgir o Barbamon X como chefe secreto, necessário para missões de títulos especiais.",
-        "Acesso: D-Terminal, pelo NPC Alphamon / Dungeon Guide. Pré-requisitos: missão The Seven Demon Lords' Resurgence: Greed e Digimon nível 170 ou superior.",
-        "Grupo máximo: 4. Limite de tempo: 20 minutos. Limite de entradas: 8 por dia."
-      ]
-    },
-    {
-      "id": "belphemon",
-      "name": "Belphemon",
-      "full": "Sanctuary of the Seven Demon Lords: Belphemon",
-      "tier": "extreme",
-      "boss": 178,
-      "ctReq": 600,
-      "htReq": 28500,
-      "hpReq": 180000,
-      "desc": "Chefe final: Belphemon (Demon Lord of Sloth and Rampage). Diferente do Barbamon, que usa armadilhas, foca em destruição pura.",
-      "notes": [
-        "HP: 180,000 a 200,000+. O chefe tem um nuke em área massivo que dá instakill se o time estiver sem buffs de proteção.",
-        "Foco da equipe: DPS extremo + suporte perfeito (buffs de Miko coordenados, como dupla Miko) para não tomar one tap.",
-        "Círculo amarelo: não causa dano, mas se alguém do grupo for atingido, cura o chefe em 2% a 3% por jogador afetado.",
-        "Atacar o círculo amarelo tem chance de invocar o chefe secreto Belphemon Sleep Mode, necessário para o título secreto da masmorra.",
-        "Recompensa: materiais para criar e aprimorar a Sloth Bracelet (Pulseira da Preguiça) até o +10.",
-        "Acesso: Terminal das Chamas (Flame Terminal), pelo NPC Alphamon (Royal Knights). Pré-requisitos: ter completado antes a DG do Barbamon, missão The Seven Demon Lords' Resurgence: Sloth e Digimon nível 170 ou superior. Grupo máximo: 4."
       ]
     },
     {

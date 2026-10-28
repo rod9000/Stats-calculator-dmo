@@ -4,7 +4,7 @@ import { $ } from './dom.js';
 import { el } from './utils.js';
 import { tr, i18n } from './i18n.js';
 import { loadItem, saveItem } from './storage.js';
-import { TIERS, loadDungeons } from './dungeon-data.js';
+import { TIERS, loadDungeons, byDifficulty } from './dungeon-data.js';
 import { calcDungeon } from './dungeon-calc.js';
 
 var STATUS_ICONS = { ready: '✓', close: '⚠', 'not-ready': '✗' };
@@ -158,6 +158,7 @@ function buildCard(dungeon, result, stats, openIds, onToggle) {
 
 export function initDungeons() {
   var fields = { level: $('#dg-level'), ct: $('#dg-ct'), ht: $('#dg-ht'), hp: $('#dg-hp'), dps: $('#dg-dps') };
+  var sortSel = $('#dgSort');
   var dungeons = null; // null enquanto carrega (ou se o carregamento falhar)
   var problems = [];
   var failure = null;
@@ -240,8 +241,10 @@ export function initDungeons() {
       empty.style.display = 'flex';
     }
 
+    var ordered = byDifficulty(dungeons);
+    if (sortSel.value === 'hard-first') ordered.reverse();
     var frag = document.createDocumentFragment();
-    dungeons.forEach(function(d) {
+    ordered.forEach(function(d) {
       frag.appendChild(buildCard(d, results[d.id] || null, stats, openIds, onToggle));
     });
     grid.textContent = '';
@@ -257,6 +260,14 @@ export function initDungeons() {
     fields[k].addEventListener('input', update);
     var saved = loadItem('dg.' + k);
     if (saved) fields[k].value = saved;
+  });
+
+  // Ordenacao por dificuldade (padrao: da mais dificil para a mais facil), lembrada entre visitas
+  var savedSort = loadItem('dg.sort');
+  if (savedSort === 'hard-first' || savedSort === 'easy-first') sortSel.value = savedSort;
+  sortSel.addEventListener('change', function() {
+    saveItem('dg.sort', sortSel.value);
+    render();
   });
 
   i18n.onChange(render);

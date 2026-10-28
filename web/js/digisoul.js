@@ -84,13 +84,15 @@ export function initDigisoul() {
     if (target === -1) { notify('dscNoSlot'); return; }
     var current = state.slots.indexOf(id);
     if (current !== -1) state.slots[current] = null;
+    var replaced = state.slots[target]; // quem ocupava o slot sai do circuito e volta para a lista
     state.slots[target] = id;
-    commit();
+    commit(replaced);
   }
 
   function unequipSlot(i) {
+    var id = state.slots[i];
     state.slots[i] = null;
-    commit();
+    commit(id); // o modulo volta para a lista, piscando para mostrar onde
   }
 
   function removeModule(id) {
@@ -141,12 +143,14 @@ export function initDigisoul() {
       node.style.borderColor = '';
       node.textContent = '';
       var label = tr('dscSlot') + ' ' + (idx + 1) + ': ' + (m ? moduleTitle(m) : tr('dscSlotEmpty'));
-      node.setAttribute('aria-label', label);
+      // o modulo equipado sai da lista, entao as linhas dele ficam no tooltip do slot
+      var detail = m ? m.lines.map(function(l) { return STAT_LABEL[l.stat].label + ' ' + formatAmount(l.value, l.pct); }) : [];
+      node.setAttribute('aria-label', detail.length ? label + ' — ' + detail.join(', ') : label);
       node.setAttribute('aria-pressed', String(idx === selected));
       if (m) {
         var rc = gradeColors(m.grade);
         node.style.borderColor = rc.bg;
-        node.title = label;
+        node.title = [label].concat(detail).join('\n');
         node.appendChild(el('span', 'dsc-slot-icon', DSC_KINDS[m.kind].icon));
         var grade = el('span', 'dsc-slot-grade', m.grade);
         grade.style.background = rc.bg;
@@ -186,29 +190,26 @@ export function initDigisoul() {
   }
 
   // ---------- lista de modulos ----------
-  function actionButton(action, id, glyph, title, disabled) {
+  function actionButton(action, id, glyph, title) {
     var b = el('button', 'dsc-ico-btn ' + action, glyph);
     b.type = 'button';
     b.title = title;
     b.setAttribute('aria-label', title);
     b.setAttribute('data-act', action);
     b.setAttribute('data-id', id);
-    b.disabled = !!disabled;
     return b;
   }
 
+  // A lista so mostra os modulos fora do circuito: os equipados ficam apenas no tabuleiro.
   function buildModule(m) {
-    var slotIdx = state.slots.indexOf(m.id);
-    var item = el('div', 'dsc-mod' + (slotIdx !== -1 ? ' equipped' : '') + (m.id === editingId ? ' editing' : ''));
+    var item = el('div', 'dsc-mod' + (m.id === editingId ? ' editing' : ''));
     item.setAttribute('data-mod', m.id);
     var icon = el('div', 'dsc-mod-icon', DSC_KINDS[m.kind].icon);
     icon.style.borderColor = gradeColors(m.grade).bg;
     item.appendChild(icon);
 
     var body = el('div', 'dsc-mod-body');
-    var title = el('div', 'dsc-mod-title', moduleTitle(m));
-    if (slotIdx !== -1) title.appendChild(el('span', 'dsc-mod-slot', tr('dscSlot') + ' ' + (slotIdx + 1)));
-    body.appendChild(title);
+    body.appendChild(el('div', 'dsc-mod-title', moduleTitle(m)));
     m.lines.forEach(function(l) {
       var row = el('div', 'dsc-mod-line');
       row.appendChild(el('span', null, STAT_LABEL[l.stat].label));
@@ -219,7 +220,6 @@ export function initDigisoul() {
 
     var actions = el('div', 'dsc-mod-actions');
     actions.appendChild(actionButton('equip', m.id, '↓', tr('dscEquip')));
-    actions.appendChild(actionButton('unequip', m.id, '↑', tr('dscUnequip'), slotIdx === -1));
     actions.appendChild(actionButton('edit', m.id, '✎', tr('dscEdit')));
     actions.appendChild(actionButton('copy', m.id, '❐', tr('dscCopy')));
     actions.appendChild(actionButton('delete', m.id, '✕', tr('dscDelete')));
@@ -231,10 +231,11 @@ export function initDigisoul() {
     var list = $('#dscList');
     var scroll = list.scrollTop; // redesenhar a lista nao pode jogar quem rolou de volta para o topo
     list.textContent = '';
-    state.modules.forEach(function(m) { list.appendChild(buildModule(m)); });
-    if (!state.modules.length) list.appendChild(el('div', 'dsc-empty', tr('dscListEmpty')));
+    var free = state.modules.filter(function(m) { return state.slots.indexOf(m.id) === -1; });
+    free.forEach(function(m) { list.appendChild(buildModule(m)); });
+    if (!free.length) list.appendChild(el('div', 'dsc-empty', tr(state.modules.length ? 'dscListAllEquipped' : 'dscListEmpty')));
     list.scrollTop = scroll;
-    $('#dscCount').textContent = state.modules.length ? '(' + state.modules.length + ')' : '';
+    $('#dscCount').textContent = free.length ? '(' + free.length + ')' : '';
     $('#dscExampleBtn').style.display = state.modules.length ? 'none' : '';
     $('#dscClearBtn').style.display = state.modules.length ? '' : 'none';
   }
@@ -246,7 +247,6 @@ export function initDigisoul() {
     var act = btn.getAttribute('data-act');
     notify('');
     if (act === 'equip') equip(id);
-    else if (act === 'unequip') unequipSlot(state.slots.indexOf(id));
     else if (act === 'edit') startEdit(id);
     else if (act === 'copy') copyModule(id);
     else if (act === 'delete') removeModule(id);

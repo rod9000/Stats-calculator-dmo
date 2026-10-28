@@ -8,19 +8,20 @@
 </head>
 <body>
 
-<div class="lang-widget" id="langWidget">
-  <button class="lang-btn active" data-lang="pt">PT</button>
-  <button class="lang-btn" data-lang="en">EN</button>
-  <button class="lang-btn" data-lang="es">ES</button>
-</div>
-
 <div class="app-card">
 <div class="header">
   <div class="header-top">
+    <div class="lang-widget" id="langWidget">
+      <button class="lang-btn active" data-lang="pt">PT</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="es">ES</button>
+    </div>
     <button class="theme-toggle" id="themeToggle" data-i18n="themeDark">Modo Escuro</button>
   </div>
-  <h1 data-i18n="h1">Digimon Master Online</h1>
-  <div class="sub" data-i18n="sub">Calculadora de Status</div>
+  <div class="header-title">
+    <h1 data-i18n="h1">Digimon Master Online</h1>
+    <div class="sub" data-i18n="sub">Calculadora de Status</div>
+  </div>
 </div>
 
 <div class="tabs-nav">
@@ -36,6 +37,10 @@
 
 <!-- ===================== TAB 1: CALCULADORA ===================== -->
 <div class="tab-content active" id="tab-calculadora">
+<div class="calc-layout">
+
+<!-- coluna 1: de onde vem o Digimon -->
+<div class="calc-col calc-col-in">
 
   <div class="card">
     <div class="card-title" data-i18n="searchDigimon">Buscar Digimon</div>
@@ -141,6 +146,11 @@
     </div>
   </div>
 
+</div>
+
+<!-- coluna 2: bonus fixos + botao calcular -->
+<div class="calc-col calc-col-flat">
+
   <!-- Flat Bonuses -->
   <div class="card">
     <div class="card-title" data-i18n="flatBonuses">Flat Bonuses</div>
@@ -154,10 +164,17 @@
   </div>
 
   <!-- Calculate -->
-  <button class="btn-buscar" id="calcularBtn" style="font-size:15px;padding:8px 30px;margin:4px 0;" data-i18n="calcular">
-    Calcular
-  </button>
-  <span class="card-hint" style="margin-left:12px;" data-i18n="ctrlEnter">Ctrl+Enter</span>
+  <div class="calc-actions">
+    <button class="btn-buscar" id="calcularBtn" style="font-size:15px;padding:8px 30px;margin:4px 0;" data-i18n="calcular">
+      Calcular
+    </button>
+    <span class="card-hint" style="margin-left:12px;" data-i18n="ctrlEnter">Ctrl+Enter</span>
+  </div>
+
+</div>
+
+<!-- coluna 3: resultado -->
+<div class="calc-col calc-col-out">
 
   <!-- Results -->
   <div class="card">
@@ -206,6 +223,12 @@
   </div>
 
 </div>
+
+</div>
+</div>
+<!-- /tab-calculadora -->
+
+
 
 <!-- ===================== TAB 2: CALCULADORA REVERSA ===================== -->
 <div class="tab-content" id="tab-reversa">
@@ -299,7 +322,7 @@
     </table>
   </div>
 
-</div> <!-- /app-card -->
+</div> <!-- /tab-lista -->
 
 <!-- ===================== TAB 5: SEALS ===================== -->
 <div class="tab-content" id="tab-seals">
@@ -526,19 +549,20 @@
         </div>
         <div class="dsc-msg" id="dscMsg" role="status"></div>
         <form class="dsc-form" id="dscForm" hidden>
-          <div class="form-row">
+          <div class="dsc-form-title" id="dscFormTitle"></div>
+          <div class="form-row dsc-row-kind">
             <label for="dscKind" data-i18n="dscKindLabel">Tipo</label>
             <select id="dscKind"></select>
             <label for="dscGrade" data-i18n="dscGradeLabel">Grau</label>
             <select id="dscGrade"></select>
           </div>
-          <div class="form-row">
+          <div class="form-row dsc-row-name">
             <label for="dscName" data-i18n="dscNameLabel">Nome</label>
             <input type="text" id="dscName" maxlength="40" placeholder="Opcional" autocomplete="off" data-i18n="placeholder:dscNamePlaceholder">
           </div>
           <div id="dscLines"></div>
-          <div class="form-row">
-            <button type="submit" class="btn-buscar" data-i18n="dscSave">Adicionar</button>
+          <div class="form-row dsc-row-actions">
+            <button type="submit" class="btn-buscar" id="dscSaveBtn">Adicionar</button>
             <button type="button" class="dsc-btn" id="dscCancelBtn" data-i18n="dscCancel">Cancelar</button>
           </div>
         </form>
@@ -548,6 +572,8 @@
   </div>
 </div>
 
+</div> <!-- /app-card -->
+
 <script src="digimon_data.js"></script>
 <script src="seal_data.js"></script>
 <script>
@@ -555,7 +581,7 @@
   if (location.protocol === 'file:') {
     document.body.insertAdjacentHTML('afterbegin',
       '<div class="file-protocol-warning"><strong>Abra pelo servidor local.</strong> ' +
-      'Execute <code>python web/server.py</code> (ou <code>python3 web/server.py</code>) e acesse <code>http://localhost:5000</code> ' +
+      'Execute <code>python web/server.py</code> (no Windows: <code>py web/server.py</code>) e acesse <code>http://localhost:5000</code> ' +
       '&mdash; abrir o arquivo direto n&atilde;o funciona.</div>');
   }
 </script>

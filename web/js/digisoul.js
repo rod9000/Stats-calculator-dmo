@@ -6,7 +6,7 @@ import { tr, i18n } from './i18n.js';
 import { loadItem, saveItem } from './storage.js';
 import { DU_RANKS, DU_RANK_COLORS } from './dunit-data.js';
 import { DSC_SLOTS, DSC_CENTER, DSC_MAX_LINES, DSC_MAX_MODULES, DSC_KINDS, DSC_STATS, DSC_EXAMPLES } from './digisoul-data.js';
-import { sanitizeState, cleanLine, sumEffects } from './digisoul-calc.js';
+import { sanitizeState, sumEffects, addModule, updateModule, duplicateModule } from './digisoul-calc.js';
 
 var STORAGE_KEY = 'dsc.state';
 var SVG_NS = 'http://www.w3.org/2000/svg';
@@ -49,14 +49,25 @@ export function initDigisoul() {
   var state;
   try { state = sanitizeState(JSON.parse(loadItem(STORAGE_KEY))); } catch (e) { state = sanitizeState(null); }
   var selected = null; // indice do slot selecionado
+  var editingId = null; // modulo aberto no formulario (null = o formulario cria um modulo novo)
   var board = $('#dscBoard');
   var form = $('#dscForm');
   var slotEls = [];
   var lineRows = [];
 
-  function commit() {
+  // Salva, redesenha e (se pedido) mostra o modulo `revealId` na lista, piscando para indicar onde ele esta.
+  function commit(revealId) {
     saveItem(STORAGE_KEY, JSON.stringify(state));
     render();
+    if (revealId) reveal(revealId);
+  }
+
+  function reveal(id) {
+    var node = $('#dscList').querySelector('[data-mod="' + id + '"]');
+    if (!node) return;
+    node.scrollIntoView({ block: 'nearest' });
+    node.classList.add('flash');
+    setTimeout(function() { node.classList.remove('flash'); }, 1200);
   }
 
   function findModule(id) {
@@ -83,9 +94,16 @@ export function initDigisoul() {
   }
 
   function removeModule(id) {
+    if (editingId === id) closeForm();
     state.modules = state.modules.filter(function(m) { return m.id !== id; });
     state.slots = state.slots.map(function(s) { return s === id ? null : s; });
     commit();
+  }
+
+  function copyModule(id) {
+    var copy = duplicateModule(state, id);
+    if (!copy) { notify('dscFull'); return; }
+    commit(copy.id);
   }
 
   // ---------- tabuleiro ----------
@@ -181,7 +199,8 @@ export function initDigisoul() {
 
   function buildModule(m) {
     var slotIdx = state.slots.indexOf(m.id);
-    var item = el('div', 'dsc-mod' + (slotIdx !== -1 ? ' equipped' : ''));
+    var item = el('div', 'dsc-mod' + (slotIdx !== -1 ? ' equipped' : '') + (m.id === editingId ? ' editing' : ''));
+    item.setAttribute('data-mod', m.id);
     var icon = el('div', 'dsc-mod-icon', DSC_KINDS[m.kind].icon);
     icon.style.borderColor = gradeColors(m.grade).bg;
     item.appendChild(icon);
@@ -201,6 +220,8 @@ export function initDigisoul() {
     var actions = el('div', 'dsc-mod-actions');
     actions.appendChild(actionButton('equip', m.id, '↓', tr('dscEquip')));
     actions.appendChild(actionButton('unequip', m.id, '↑', tr('dscUnequip'), slotIdx === -1));
+    actions.appendChild(actionButton('edit', m.id, '✎', tr('dscEdit')));
+    actions.appendChild(actionButton('copy', m.id, '❐', tr('dscCopy')));
     actions.appendChild(actionButton('delete', m.id, '✕', tr('dscDelete')));
     item.appendChild(actions);
     return item;
@@ -208,9 +229,11 @@ export function initDigisoul() {
 
   function renderList() {
     var list = $('#dscList');
+    var scroll = list.scrollTop; // redesenhar a lista nao pode jogar quem rolou de volta para o topo
     list.textContent = '';
     state.modules.forEach(function(m) { list.appendChild(buildModule(m)); });
     if (!state.modules.length) list.appendChild(el('div', 'dsc-empty', tr('dscListEmpty')));
+    list.scrollTop = scroll;
     $('#dscCount').textContent = state.modules.length ? '(' + state.modules.length + ')' : '';
     $('#dscExampleBtn').style.display = state.modules.length ? 'none' : '';
     $('#dscClearBtn').style.display = state.modules.length ? '' : 'none';
@@ -224,6 +247,8 @@ export function initDigisoul() {
     notify('');
     if (act === 'equip') equip(id);
     else if (act === 'unequip') unequipSlot(state.slots.indexOf(id));
+    else if (act === 'edit') startEdit(id);
+    else if (act === 'copy') copyModule(id);
     else if (act === 'delete') removeModule(id);
   });
 
@@ -258,14 +283,16 @@ export function initDigisoul() {
     row.appendChild(unitSel);
     linesBox.appendChild(row);
     lineRows.push({ stat: statSel, value: valueInput, unit: unitSel });
-    // Skill Damage e EXP so existem em %
-    statSel.addEventListener('change', (function(s, u) {
-      return function() {
-        var only = !!s.value && STAT_LABEL[s.value].pctOnly;
-        if (only) u.value = 'pct';
-        u.disabled = only;
-      };
-    })(statSel, unitSel));
+    statSel.addEventListener('change', (function(lr) {
+      return function() { lockUnit(lr); };
+    })(lineRows[r]));
+  }
+
+  // Skill Damage e EXP so existem em %: forca a unidade e trava o seletor
+  function lockUnit(lr) {
+    var only = !!lr.stat.value && STAT_LABEL[lr.stat.value].pctOnly;
+    if (only) lr.unit.value = 'pct';
+    lr.unit.disabled = only;
   }
 
   function resetForm() {
@@ -280,38 +307,78 @@ export function initDigisoul() {
     notify('');
   }
 
+  function closeForm() {
+    editingId = null;
+    form.hidden = true;
+    resetForm();
+  }
+
+  function readForm() {
+    return {
+      kind: $('#dscKind').value,
+      grade: gradeSel.value,
+      name: $('#dscName').value,
+      lines: lineRows.map(function(lr) { return { stat: lr.stat.value, value: lr.value.value, pct: lr.unit.value === 'pct' }; })
+    };
+  }
+
+  // Abre o formulario ja preenchido com os dados do modulo; salvar troca o modulo no lugar (mesmo id, mesmo slot)
+  function startEdit(id) {
+    var m = findModule(id);
+    if (!m) return;
+    resetForm();
+    editingId = id;
+    $('#dscKind').value = m.kind;
+    gradeSel.value = m.grade;
+    $('#dscName').value = m.name;
+    m.lines.forEach(function(l, i) {
+      var lr = lineRows[i];
+      lr.stat.value = l.stat;
+      lr.value.value = l.value;
+      lr.unit.value = l.pct ? 'pct' : 'flat';
+      lockUnit(lr);
+    });
+    form.hidden = false;
+    render();
+    form.scrollIntoView({ block: 'nearest' });
+    $('#dscName').focus();
+  }
+
+  function renderFormMode() {
+    var m = editingId === null ? null : findModule(editingId);
+    $('#dscFormTitle').textContent = m ? tr('dscFormEdit') + ': ' + moduleTitle(m) : tr('dscFormNew');
+    $('#dscSaveBtn').textContent = tr(m ? 'dscSaveEdit' : 'dscSave');
+  }
+
   $('#dscAddBtn').addEventListener('click', function() {
+    if (editingId !== null) {
+      // estava editando: o botao passa a abrir o formulario em branco, em vez de fechar
+      editingId = null;
+      resetForm();
+      form.hidden = false;
+      render();
+      return;
+    }
     form.hidden = !form.hidden;
     notify('');
   });
   $('#dscCancelBtn').addEventListener('click', function() {
-    form.hidden = true;
-    resetForm();
+    closeForm();
+    render();
   });
 
   form.addEventListener('submit', function(e) {
     e.preventDefault();
-    if (state.modules.length >= DSC_MAX_MODULES) { notify('dscFull'); return; }
-    var lines = lineRows.map(function(lr) {
-      return cleanLine({ stat: lr.stat.value, value: lr.value.value, pct: lr.unit.value === 'pct' });
-    }).filter(Boolean);
-    if (!lines.length) { notify('dscNeedLine'); return; }
-    state.modules.push({
-      id: state.nextId++,
-      kind: $('#dscKind').value,
-      grade: gradeSel.value,
-      name: $('#dscName').value.trim().slice(0, 40),
-      lines: lines
-    });
-    form.hidden = true;
-    resetForm();
-    commit();
+    var editing = editingId !== null;
+    if (!editing && state.modules.length >= DSC_MAX_MODULES) { notify('dscFull'); return; }
+    var saved = editing ? updateModule(state, editingId, readForm()) : addModule(state, readForm());
+    if (!saved) { notify('dscNeedLine'); return; }
+    closeForm();
+    commit(saved.id);
   });
 
   $('#dscExampleBtn').addEventListener('click', function() {
-    DSC_EXAMPLES.forEach(function(ex) {
-      state.modules.push({ id: state.nextId++, kind: ex.kind, grade: ex.grade, name: ex.name, lines: ex.lines.map(function(l) { return { stat: l.stat, value: l.value, pct: l.pct }; }) });
-    });
+    DSC_EXAMPLES.forEach(function(ex) { addModule(state, ex); });
     commit();
   });
 
@@ -319,11 +386,13 @@ export function initDigisoul() {
     if (!confirm(tr('dscConfirmClear'))) return;
     state = sanitizeState(null);
     selected = null;
+    closeForm();
     commit();
   });
 
   function render() {
     fillKinds();
+    renderFormMode();
     renderBoard();
     renderEffects();
     renderList();

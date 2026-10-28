@@ -100,7 +100,9 @@ function buildCard(dungeon, result, stats, openIds, onToggle) {
   var head = el('div', 'dgcalc-dg-head');
   var names = el('div');
   names.appendChild(el('div', 'dgcalc-dg-name', dungeon.name));
-  names.appendChild(el('div', 'dgcalc-dg-full', dungeon.full));
+  var full = el('div', 'dgcalc-dg-full', dungeon.full);
+  full.title = dungeon.full; // em telas cheias o nome longo e cortado com "..."; o texto inteiro fica no tooltip
+  names.appendChild(full);
   head.appendChild(names);
   var tierTag = el('span', 'dgcalc-dg-tier', tier.label);
   tierTag.style.background = tier.color + '18';

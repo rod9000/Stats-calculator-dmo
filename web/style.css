@@ -925,6 +925,7 @@ input.narrow { width: 70px; }
   border: 1px dashed var(--border); border-radius: 8px; background: var(--panel-bg);
 }
 .dsc-form[hidden] { display: none; }
+.dsc-form-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
 .dsc-form input[type="text"] { flex: 1; min-width: 140px; }
 .dsc-line-row { display: flex; gap: 6px; margin-bottom: 4px; }
 .dsc-line-stat { width: 130px; }
@@ -936,7 +937,10 @@ input.narrow { width: 70px; }
   display: flex; gap: 10px; padding: 8px 10px; border: 1px solid var(--border);
   border-radius: 8px; background: var(--card-bg);
 }
+.dsc-mod { transition: box-shadow .4s, border-color .2s; }
 .dsc-mod.equipped { background: var(--accent-soft); }
+.dsc-mod.editing { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.dsc-mod.flash { box-shadow: 0 0 0 3px var(--accent); }
 .dsc-mod-icon {
   flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
   border: 2px solid var(--border); border-radius: 8px; background: var(--panel-bg); font-size: 22px;
@@ -949,16 +953,186 @@ input.narrow { width: 70px; }
 }
 .dsc-mod-line { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--sub-fg); }
 .dsc-mod-line b { color: var(--accent); }
-.dsc-mod-actions { display: flex; flex-direction: column; gap: 4px; }
+.dsc-mod-actions { display: grid; grid-template-columns: repeat(3, 26px); grid-auto-rows: 26px; gap: 4px; align-content: start; }
 .dsc-ico-btn {
   width: 26px; height: 26px; padding: 0; border: 1px solid var(--border); border-radius: 5px;
   background: var(--panel-bg); color: var(--sub-fg); font-size: 13px; font-weight: 700;
   cursor: pointer; transition: all .15s;
 }
-.dsc-ico-btn.equip:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dsc-ico-btn.equip:hover, .dsc-ico-btn.edit:hover, .dsc-ico-btn.copy:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .dsc-ico-btn.unequip:hover:not(:disabled), .dsc-ico-btn.delete:hover { background: #ef4444; border-color: #ef4444; color: #fff; }
 .dsc-ico-btn:disabled { opacity: .35; cursor: default; }
 
 @media (max-width: 768px) {
   .dsc-layout { grid-template-columns: 1fr; }
+}
+
+/* ===== CABE NA TELA (desktop) =====
+   Em janelas largas e altas (a partir de 1024 x 560) a pagina vira um painel: cabecalho, abas e o conteudo da aba
+   ocupam exatamente a altura da janela. As abas se espalham em colunas e so as listas compridas rolam por dentro.
+   Abaixo disso (celular, janela baixa) vale o layout em fluxo de sempre, definido nas regras acima. */
+@media (min-width: 1024px) and (min-height: 560px) {
+  body {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .app-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 1880px;
+    padding: 12px 18px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .file-protocol-warning { flex: none; }
+
+  /* cabecalho numa linha so: titulo a esquerda, idioma + tema a direita */
+  .header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+  .header-title { order: 1; display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+  .header-top { order: 2; margin: 0; gap: 10px; }
+  .header h1 { font-size: 20px; line-height: 1.2; white-space: nowrap; }
+  .header .sub { white-space: nowrap; }
+  .lang-widget { position: static; order: -1; padding: 2px; gap: 2px; border-radius: 6px; }
+  .lang-widget, [data-theme="dark"] .lang-widget { box-shadow: none; }
+  .lang-btn { padding: 4px 10px; }
+  .theme-toggle { float: none; padding: 6px 12px; font-size: 12px; }
+
+  .tabs-nav { flex: none; flex-wrap: nowrap; overflow-x: auto; margin-bottom: 8px; scrollbar-width: thin; }
+  .tab-btn { flex: none; padding: 7px 14px; white-space: nowrap; }
+
+  /* a aba ativa ocupa o resto da altura; se algo ainda nao couber, rola so ela (o resto da pagina fica parado) */
+  .tab-content.active {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: auto;
+    padding: 3px; /* folga para sombras e anel de foco nao serem cortados pela rolagem */
+    margin: -3px;
+  }
+  .tab-content.active > * { flex: none; }
+
+  .card { padding: 10px 14px; margin-bottom: 0; }
+  .card-title { font-size: 14px; margin-bottom: 6px; padding-bottom: 4px; border-bottom-width: 2px; }
+  .card-hint { margin-bottom: 6px; }
+  .form-row { gap: 6px 14px; margin-bottom: 6px; }
+  input, select { padding: 5px 8px; }
+
+  /* --- Calculadora: 2 colunas (entrada | bonus + resultado); em telas maiores, 3 colunas --- */
+  .calc-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; align-content: start; }
+  .calc-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .calc-col-in { grid-column: 1; grid-row: 1 / span 2; }
+  .calc-col-flat { grid-column: 2; grid-row: 1; }
+  .calc-col-out { grid-column: 2; grid-row: 2; }
+  .calc-actions { display: flex; align-items: center; }
+  .calc-actions .btn-buscar { margin: 0 !important; }
+  /* as grades Simples/Por Nivel tem uma coluna vazia de 80px no fim de cada linha: aqui ela some */
+  #simple-fields .stats-grid, #nivel-fields .stats-grid { grid-template-columns: 74px repeat(6, minmax(0, 1fr)) !important; }
+  #simple-fields .stats-grid > :nth-child(8n), #nivel-fields .stats-grid > :nth-child(8n) { display: none; }
+  #flatGrid { grid-template-columns: 88px repeat(6, minmax(0, 1fr)) !important; }
+  .stats-grid { gap: 3px; margin: 4px 0; }
+  .stats-grid .header-cell { padding: 3px; }
+  .stats-grid input { padding: 3px 5px; }
+  .result-table { font-size: 12px; margin-top: 4px; }
+  .result-table th { padding: 4px 6px; }
+  .result-table td { padding: 3px 6px; }
+  .copy-btn { margin-top: 6px; }
+
+  /* --- Comparacao: cartoes lado a lado, a area deles rola --- */
+  #tab-comparacao.active > .compare-grid { flex: 1 1 auto; min-height: 0; overflow: auto; align-content: start; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; padding: 2px; }
+  .compare-card { min-height: 0; padding: 10px 12px; }
+
+  /* --- Lista de Digimons e Seals: a tabela ocupa o resto da altura --- */
+  #tab-lista.active > .list-table-wrap { flex: 1 1 auto; min-height: 0; max-height: none; }
+  #tab-seals.active > .card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #tab-seals .sub-tab-content.active { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
+  #tab-seals .list-table-wrap { flex: 1 1 auto; min-height: 0; max-height: none; }
+  .sub-tabs-nav { margin-bottom: 6px; }
+  .seal-stats { margin-bottom: 6px; }
+
+  /* --- DG Calculator: campos a esquerda, dungeons a direita (a lista de cartoes rola) --- */
+  .dgcalc-layout { flex: 1 1 auto; min-height: 0; grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 16px; align-items: stretch; }
+  .dgcalc-left { min-height: 0; overflow-y: auto; gap: 8px; padding-right: 2px; }
+  .dgcalc-heading h2 { font-size: 17px; }
+  .dgcalc-subtitle { font-size: 12px; }
+  .dgcalc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+  .dgcalc-field label { margin-bottom: 3px; }
+  .dgcalc-field input { padding: 6px 8px; font-size: 14px; }
+  .dgcalc-chip { padding: 5px 4px; }
+  .dgcalc-chip-val { font-size: 16px; }
+  .dgcalc-disclaimer { padding: 0 2px; }
+  .dgcalc-right { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto auto minmax(0, 1fr); column-gap: 12px; }
+  .dgcalc-section-header { grid-column: 1; grid-row: 1; align-self: center; margin-bottom: 8px; }
+  .dgcalc-sortbar { grid-column: 2; grid-row: 1; margin-bottom: 8px; }
+  .dgcalc-warning { grid-column: 1 / -1; grid-row: 2; }
+  .dgcalc-empty { grid-column: 1 / -1; grid-row: 3; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 2px 10px; min-height: 0; margin-bottom: 8px; padding: 6px 10px; border: 1px dashed var(--border); border-radius: 8px; }
+  .dgcalc-empty-icon { font-size: 20px; margin: 0; }
+  .dgcalc-empty-title { margin: 0; }
+  .dgcalc-empty-text { max-width: none; }
+  .dgcalc-grid { grid-column: 1 / -1; grid-row: 4; min-height: 0; overflow-y: auto; align-content: start; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; padding: 2px 4px 2px 2px; }
+  .dgcalc-dg-body { padding: 8px 10px; }
+  .dgcalc-dg-head { margin-bottom: 4px; gap: 6px; }
+  .dgcalc-dg-head > div:first-child { min-width: 0; }
+  .dgcalc-dg-name { font-size: 14px; }
+  .dgcalc-dg-full { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dgcalc-dg-status-row { margin-bottom: 6px; }
+  /* cada barra vira 2 linhas (nome + valores / barra + %) em vez de 3 */
+  .dgcalc-dg-statbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-items: center; margin-bottom: 4px; }
+  .dgcalc-dg-bar-header { display: contents; }
+  .dgcalc-dg-bar-header > span:first-child { grid-column: 1; grid-row: 1; }
+  .dgcalc-dg-bar-header > span:last-child { grid-column: 2; grid-row: 1; text-align: right; }
+  .dgcalc-dg-bar-track { grid-column: 1; grid-row: 2; height: 6px; }
+  .dgcalc-dg-bar-pct { grid-column: 2; grid-row: 2; margin-top: 0; line-height: 1; }
+  .dgcalc-dg-details { margin-top: 6px; padding-top: 6px; }
+
+  /* --- D-Unit: progresso a esquerda, familias a direita (a grade rola) --- */
+  .dunit-layout { flex: 1 1 auto; min-height: 0; grid-template-columns: 300px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 12px; align-items: stretch; }
+  .dunit-left { min-height: 0; overflow-y: auto; gap: 8px; }
+  .dunit-right { min-height: 0; display: flex; flex-direction: column; }
+  .dunit-toolbar { flex: none; margin-bottom: 8px; }
+  .dunit-grid { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px; padding: 2px 4px 2px 2px; }
+  .dunit-progress-ring { width: 108px; height: 108px; margin-bottom: 6px; }
+  .dunit-ring-count { font-size: 24px; }
+  .dunit-tier-list { gap: 2px; }
+  .dunit-tier-item { padding: 4px 8px; }
+
+  /* --- Digisoul Circuit: tabuleiro + efeitos a esquerda, modulos a direita (a lista rola) --- */
+  .dsc-layout { flex: 1 1 auto; min-height: 0; grid-template-columns: 330px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 12px; align-items: stretch; }
+  .dsc-left { min-height: 0; overflow-y: auto; gap: 8px; }
+  .dsc-right { min-height: 0; display: flex; flex-direction: column; }
+  .dsc-right > .card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .dsc-board { max-width: 250px; margin: 2px auto 6px; }
+  .dsc-effects { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .dsc-effects .dsc-empty { grid-column: 1 / -1; }
+  .dsc-eff-row { padding: 4px 8px; font-size: 12px; }
+  .dsc-toolbar { flex: none; margin-bottom: 8px; }
+  .dsc-msg { flex: none; }
+  .dsc-form {
+    flex: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    grid-template-areas: "title title" "kind lines" "name lines" "actions lines";
+    gap: 4px 14px; align-content: start; padding: 10px 12px; margin-bottom: 8px;
+  }
+  .dsc-form-title { grid-area: title; }
+  .dsc-row-kind { grid-area: kind; }
+  .dsc-row-name { grid-area: name; }
+  #dscLines { grid-area: lines; }
+  .dsc-row-actions { grid-area: actions; }
+  .dsc-form .form-row { margin-bottom: 0; }
+  .dsc-list { flex: 1 1 auto; min-height: 0; max-height: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; align-content: start; padding: 2px 4px 2px 2px; }
+  .dsc-list .dsc-empty { grid-column: 1 / -1; }
+}
+
+/* telas bem largas (ex.: notebook full HD a 125%): a Calculadora usa 3 colunas */
+@media (min-width: 1500px) and (min-height: 560px) {
+  .calc-layout { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .calc-col-in { grid-column: 1; grid-row: 1; }
+  .calc-col-flat { grid-column: 2; grid-row: 1; }
+  .calc-col-out { grid-column: 3; grid-row: 1; }
 }

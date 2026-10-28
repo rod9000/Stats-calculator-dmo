@@ -32,7 +32,7 @@ function option(value, text) {
   return o;
 }
 
-// Linhas decorativas do circuito: anel externo + cruz ate o slot central
+  // Linhas decorativas do circuito: anel externo + cruz ate o slot central
 function buildCircuitLines() {
   var svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'dsc-lines');
@@ -40,7 +40,7 @@ function buildCircuitLines() {
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.setAttribute('aria-hidden', 'true');
   var path = document.createElementNS(SVG_NS, 'path');
-  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250');
+  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250 M50 50L250 250 M250 50L50 250');
   svg.appendChild(path);
   return svg;
 }
@@ -95,6 +95,22 @@ export function initDigisoul() {
     commit(id); // o modulo volta para a lista, piscando para mostrar onde
   }
 
+  function unequipAll() {
+    var ids = [];
+    state.slots.forEach(function(id, i) {
+      if (id !== null) {
+        ids.push(id);
+        state.slots[i] = null;
+      }
+    });
+    if (ids.length === 0) { notify(''); render(); return; }
+    saveItem(STORAGE_KEY, JSON.stringify(state));
+    render();
+    if (ids.length === 1) {
+      reveal(ids[0]);
+    }
+  }
+
   function removeModule(id) {
     if (editingId === id) closeForm();
     state.modules = state.modules.filter(function(m) { return m.id !== id; });
@@ -109,7 +125,8 @@ export function initDigisoul() {
   }
 
   // ---------- tabuleiro ----------
-  board.appendChild(buildCircuitLines());
+  var dscSvg = buildCircuitLines();
+  board.appendChild(dscSvg);
   for (var i = 0; i < DSC_SLOTS; i++) {
     var slot = el('div', 'dsc-slot');
     slot.setAttribute('data-slot', i);
@@ -135,6 +152,13 @@ export function initDigisoul() {
       e.target.click();
     }
   });
+
+  var unequipAllBtn = document.getElementById('dscUnequipAllBtn');
+  if (unequipAllBtn) {
+    unequipAllBtn.addEventListener('click', function() {
+      unequipAll();
+    });
+  }
 
   function renderBoard() {
     slotEls.forEach(function(node, idx) {
@@ -183,10 +207,31 @@ export function initDigisoul() {
       if (t.pct) parts.push(formatAmount(t.pct, true));
       var row = el('div', 'dsc-eff-row');
       row.appendChild(el('span', 'dsc-eff-label', s.label));
-      row.appendChild(el('span', 'dsc-eff-val', parts.length ? parts.join(' · ') : '+0'));
+      row.appendChild(el('span', 'dsc-eff-val', parts.length ? parts.join(' Â· ') : '+0'));
       box.appendChild(row);
     });
     if (!any) box.appendChild(el('div', 'dsc-empty', tr('dscEffectsEmpty')));
+
+    // Efeito nas linhas do circuito quando formar linha com 3
+    if (dscSvg) {
+      var paths = dscSvg.querySelectorAll('path');
+      paths.forEach(function(p) { p.classList.remove('dsc-line-glow'); });
+      if (state.slots.every(function(id){ return id !== null; }) && state.slots.length === 9) {
+        var equipped = state.slots.map(function(id){ return findModule(id); }).filter(Boolean);
+        if (equipped.length === 9) {
+          var lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+          var hasLine = false;
+          for (var li=0; li<lines.length; li++) {
+            var ln = lines[li];
+            var k0 = equipped[ln[0]].kind, k1 = equipped[ln[1]].kind, k2 = equipped[ln[2]].kind;
+            if (k0===k1 && k1===k2) { hasLine = true; break; }
+          }
+          if (hasLine) {
+            paths.forEach(function(p) { p.classList.add('dsc-line-glow'); });
+          }
+        }
+      }
+    }
   }
 
   // ---------- lista de modulos ----------

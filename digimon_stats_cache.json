@@ -135,6 +135,23 @@
     "de_base": "37",
     "_cached_at": "2026-05-27T11:07:02.774382"
   },
+  "Angewomon (Awaken)": {
+    "form": "Ultimate",
+    "level_cap": 170,
+    "hp": "26665",
+    "hp_base": "18271",
+    "ds": "7433",
+    "ds_base": "6460",
+    "at": "7319",
+    "at_base": "5120",
+    "ct": "37.82%",
+    "ct_base": "14.30%",
+    "ht": "443",
+    "ht_base": null,
+    "de": "481",
+    "de_base": "320",
+    "_cached_at": "2026-10-28T00:00:00.000000"
+  },
   "Angoramon": {
     "form": "Rookie",
     "level_cap": 140,

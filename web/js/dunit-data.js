@@ -13,7 +13,7 @@ export var DU_TIERS = [
   { rank:'Gold', groups:60, color:'#ffd700', rewards:'HP +1500, EXP 700%, AT +300' },
   { rank:'Platinum', groups:100, color:'#e5e4e2', rewards:'HP +2500, SKD 15%, HT +400' },
   { rank:'Diamond', groups:140, color:'#b9f2ff', rewards:'CT +600, SKD 20%, HT +600' },
-  { rank:'Master', groups:190, color:'#ff6b6b', rewards:'CT +1000, SKD 25%, HT +1000, D-Master 5% FD, HT +2000, CT +2000' }
+  { rank:'Master', groups:190, color:'#ff6b6b', rewards:'CT +2000, SKD 25%, HT +2000, D-Master 5% FD' }
 ];
 export var DU_STAT_LABELS = {
   HP:'HP', DS:'DS', AT:'AT', DE:'DE', CT:'CT', HT:'HT', EV:'EV', BL:'BL',

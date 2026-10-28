@@ -40,7 +40,7 @@ function buildCircuitLines() {
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.setAttribute('aria-hidden', 'true');
   var path = document.createElementNS(SVG_NS, 'path');
-  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250 M50 50L250 250 M250 50L50 250');
+  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250 M50 50L250 250 M250 50L50 250 M150 50L50 100 M150 50L250 100 M250 50L200 150 M250 250L200 150 M250 250L150 200 M50 250L150 200 M50 250L100 150 M50 50L100 150');
   svg.appendChild(path);
   return svg;
 }

@@ -201,7 +201,7 @@
         <tr class="total-row"><td colspan="7" id="totalLine" style="text-align:left;padding:8px;">-</td></tr>
       </tbody>
     </table>
-    <button class="copy-btn" onclick="copyResults()" data-i18n="copiar">Copiar</button>
+    <button class="copy-btn" data-i18n="copiar">Copiar</button>
   </div>
 
 </div>
@@ -366,19 +366,29 @@
         <div class="card-title" data-i18n="dgYourStats">Seus Stats</div>
         <div class="dgcalc-fields">
           <div class="dgcalc-field">
-            <label for="dg-level" data-i18n="dgLevel">N&iacute;vel <span class="dgcalc-badge">1&ndash;180</span></label>
+            <label for="dg-level"><span data-i18n="dgLevel">N&iacute;vel</span> <span class="dgcalc-badge">1&ndash;180</span></label>
             <input type="number" id="dg-level" min="1" max="180" placeholder="150" inputmode="numeric">
             <span class="dgcalc-hint" data-i18n="dgLevelHint">N&iacute;vel atual do seu Digimon</span>
           </div>
           <div class="dgcalc-field">
-            <label for="dg-ct" data-i18n="dgCt">Critical Rate <span class="dgcalc-badge">CT</span></label>
+            <label for="dg-ct"><span data-i18n="dgCt">Critical Rate</span> <span class="dgcalc-badge">CT</span></label>
             <input type="number" id="dg-ct" min="0" max="99999" placeholder="ex: 400" inputmode="numeric">
             <span class="dgcalc-hint" data-i18n="dgCtHint">Janela de status do Digimon</span>
           </div>
           <div class="dgcalc-field">
-            <label for="dg-ht" data-i18n="dgHt">Hit Rate <span class="dgcalc-badge">HT</span></label>
+            <label for="dg-ht"><span data-i18n="dgHt">Hit Rate</span> <span class="dgcalc-badge">HT</span></label>
             <input type="number" id="dg-ht" min="0" max="999999" placeholder="ex: 17000" inputmode="numeric">
             <span class="dgcalc-hint" data-i18n="dgHtHint">Janela de status do Digimon</span>
+          </div>
+          <div class="dgcalc-field">
+            <label for="dg-hp"><span data-i18n="dgHp">HP</span> <span class="dgcalc-badge dgcalc-badge-muted" data-i18n="dgOptional">opcional</span></label>
+            <input type="number" id="dg-hp" min="0" placeholder="ex: 180000" inputmode="numeric">
+            <span class="dgcalc-hint" data-i18n="dgHpHint">Opcional &mdash; vida total do Digimon</span>
+          </div>
+          <div class="dgcalc-field">
+            <label for="dg-dps"><span data-i18n="dgDps">DPS</span> <span class="dgcalc-badge dgcalc-badge-muted" data-i18n="dgOptional">opcional</span></label>
+            <input type="number" id="dg-dps" min="0" placeholder="ex: 1000000" inputmode="numeric">
+            <span class="dgcalc-hint" data-i18n="dgDpsHint">Opcional &mdash; dano por segundo</span>
           </div>
         </div>
       </div>
@@ -386,6 +396,8 @@
         <div class="dgcalc-chip"><span class="dgcalc-chip-label" data-i18n="dgLevel">N&iacute;vel</span><span class="dgcalc-chip-val" id="dgChipLv">-</span></div>
         <div class="dgcalc-chip"><span class="dgcalc-chip-label">CT</span><span class="dgcalc-chip-val" id="dgChipCt">-</span></div>
         <div class="dgcalc-chip"><span class="dgcalc-chip-label">HT</span><span class="dgcalc-chip-val" id="dgChipHt">-</span></div>
+        <div class="dgcalc-chip" id="dgChipHpBox" style="display:none;"><span class="dgcalc-chip-label">HP</span><span class="dgcalc-chip-val" id="dgChipHp">-</span></div>
+        <div class="dgcalc-chip" id="dgChipDpsBox" style="display:none;"><span class="dgcalc-chip-label">DPS</span><span class="dgcalc-chip-val" id="dgChipDps">-</span></div>
       </div>
       <div class="dgcalc-counters" id="dgCounters" style="display:none;">
         <span class="dgcalc-pill" data-type="ready"><span class="dgcalc-pill-icon">&#10003;</span><span id="dgReady">0</span> <span data-i18n="dgReady">Pronto</span></span>
@@ -397,8 +409,9 @@
     <div class="dgcalc-right">
       <div class="dgcalc-section-header">
         <h3 data-i18n="dgEndgame">Dungeons Endgame</h3>
-        <span id="dgDungeonCount">9 dungeons</span>
+        <span id="dgDungeonCount"></span>
       </div>
+      <div class="dgcalc-warning" id="dgProblems" style="display:none;"></div>
       <div class="dgcalc-empty" id="dgEmpty">
         <div class="dgcalc-empty-icon">&#9878;</div>
         <p class="dgcalc-empty-title" data-i18n="dgEmptyTitle">Insira seus stats para come&ccedil;ar</p>
@@ -483,7 +496,16 @@
 
 <script src="digimon_data.js"></script>
 <script src="seal_data.js"></script>
-<script src="app.js"></script>
+<script>
+  // Modulos ES e fetch nao funcionam via file://; avisa em vez de deixar a pagina sem vida
+  if (location.protocol === 'file:') {
+    document.body.insertAdjacentHTML('afterbegin',
+      '<div class="file-protocol-warning"><strong>Abra pelo servidor local.</strong> ' +
+      'Execute <code>python web/server.py</code> e acesse <code>http://localhost:5000</code> ' +
+      '&mdash; abrir o arquivo direto n&atilde;o funciona.</div>');
+  }
+</script>
+<script type="module" src="js/main.js"></script>
 
 </body>
 </html>

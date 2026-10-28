@@ -565,11 +565,12 @@ input.narrow { width: 70px; }
   outline: none; transition: border-color .15s, box-shadow .15s;
 }
 .dgcalc-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.dgcalc-badge-muted { background: var(--panel-bg); color: var(--sub-fg); font-weight: 600; }
 .dgcalc-hint { font-size: 11px; color: var(--sub-fg); margin-top: 2px; display: block; }
 
-.dgcalc-chips { display: flex; gap: 8px; }
+.dgcalc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .dgcalc-chip {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
+  flex: 1 1 80px; display: flex; flex-direction: column; align-items: center;
   border: 1px solid var(--border); border-radius: 8px; padding: 8px 4px; background: var(--card-bg);
 }
 .dgcalc-chip-label { font-size: 11px; color: var(--sub-fg); font-weight: 600; text-transform: uppercase; }
@@ -665,6 +666,26 @@ input.narrow { width: 70px; }
 .dgcalc-dg-bar-fill[data-pass="false"][data-close="true"] { background: #eab308; }
 .dgcalc-dg-bar-fill[data-pass="false"][data-close="false"] { background: #ef4444; }
 .dgcalc-dg-bar-pct { font-size: 11px; color: var(--sub-fg); text-align: right; margin-top: 2px; }
+.dgcalc-dg-statbar[data-idle="true"] { opacity: .55; }
+
+.dgcalc-dg-details { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+.dgcalc-dg-details summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--accent); }
+.dgcalc-dg-details-body {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 8px;
+  font-size: 12px; line-height: 1.5; color: var(--sub-fg);
+}
+.dgcalc-dg-details-body strong { color: var(--label-fg); }
+.dgcalc-dg-notes { display: flex; flex-direction: column; gap: 4px; padding-left: 16px; }
+
+.dgcalc-warning, .dgcalc-error { margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; }
+.dgcalc-warning { border: 1px solid #eab30860; background: #eab3081a; color: var(--label-fg); }
+.dgcalc-warning ul { padding-left: 16px; }
+.dgcalc-error { grid-column: 1 / -1; border: 1px solid #ef444460; background: #ef44441a; color: #ef4444; }
+
+.file-protocol-warning {
+  max-width: 900px; margin: 0 auto 12px; padding: 12px 16px; border-radius: 8px;
+  border: 1px solid #ef444460; background: #ef44441a; color: var(--label-fg); font-size: 14px;
+}
 
 @media (max-width: 768px) {
   .dgcalc-layout { grid-template-columns: 1fr; }

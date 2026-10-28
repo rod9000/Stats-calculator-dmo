@@ -1,0 +1,224 @@
+{
+  "dungeons": [
+    {
+      "id": "fdgh",
+      "name": "FDGH",
+      "full": "Fanglongmon Dungeon Hard",
+      "tier": "entry",
+      "boss": 130,
+      "ctReq": 396,
+      "htReq": 16250,
+      "desc": "Dungeon endgame de entrada. Melhor ponto de começar antes de conteúdo intermediário."
+    },
+    {
+      "id": "susano",
+      "name": "Susano",
+      "full": "Susanoomon Dungeon",
+      "tier": "mid",
+      "boss": 140,
+      "ctReq": 418,
+      "htReq": 18000,
+      "desc": "Dungeon intermediária com Susanoomon como boss final. Exige gear sólido e coordenação em party."
+    },
+    {
+      "id": "rbh",
+      "name": "RBH",
+      "full": "Royal Base Hard",
+      "tier": "mid",
+      "boss": 140,
+      "ctReq": 410,
+      "htReq": 17000,
+      "desc": "Royal Base em modo Hard. Requisitos similares ao Susano com limiares de stat diferentes."
+    },
+    {
+      "id": "colo",
+      "name": "COLO",
+      "full": "Colosseum Hard",
+      "tier": "mid",
+      "boss": 140,
+      "ctReq": 418,
+      "htReq": 21111,
+      "desc": "O dungeon Colosseum exige alto hit-rate para acertar consistentemente inimigos evasivos."
+    },
+    {
+      "id": "gulus_easy",
+      "name": "Gulus Easy",
+      "full": "Gulus Dungeon (Easy)",
+      "tier": "mid",
+      "boss": 150,
+      "ctReq": 422.4,
+      "htReq": 22000,
+      "dpsReq": 250000,
+      "desc": "Modo Easy do Gulus — ainda exige altos stats. Portal para o conteúdo mais difícil do DMO."
+    },
+    {
+      "id": "chimera_easy",
+      "name": "Chimera Easy",
+      "full": "Chimera Dungeon (Easy)",
+      "tier": "mid",
+      "boss": 165,
+      "bossEstimated": true,
+      "ctReq": 380,
+      "htReq": 16500,
+      "dpsReq": 200000,
+      "desc": "Modo Easy da Chimera.",
+      "notes": [
+        "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
+      ]
+    },
+    {
+      "id": "mdg",
+      "name": "MDG",
+      "full": "MetalGreymon Dungeon",
+      "tier": "hard",
+      "boss": 150,
+      "ctReq": 451,
+      "htReq": 21000,
+      "desc": "Dungeon tier hard com boss no Nível 150. Exige stats acumulados fortes para superar a diferença de nível."
+    },
+    {
+      "id": "gulus",
+      "name": "Gulus",
+      "full": "Gulus Dungeon",
+      "tier": "hard",
+      "boss": 160,
+      "ctReq": 533,
+      "htReq": 28452,
+      "dpsReq": 700000,
+      "desc": "O píncaro do conteúdo endgame do DMO. Boss Nível 160 cria penalidades severas para jogadores abaixo do nível."
+    },
+    {
+      "id": "chimera_normal",
+      "name": "Chimera Normal",
+      "full": "Chimera Dungeon (Normal)",
+      "tier": "hard",
+      "boss": 170,
+      "bossEstimated": true,
+      "ctReq": 500,
+      "htReq": 27000,
+      "dpsReq": 500000,
+      "desc": "Modo Normal da Chimera.",
+      "notes": [
+        "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
+      ]
+    },
+    {
+      "id": "dark_web",
+      "name": "Dark Web",
+      "full": "Dark Web (boss final: Armageddemon)",
+      "tier": "hard",
+      "boss": 170,
+      "bossEstimated": true,
+      "ctReq": 550,
+      "htReq": 30000,
+      "hpReq": 180000,
+      "dpsReq": 1000000,
+      "desc": "Masmorra acessada pelo D-Terminal, para grupos de até 2 jogadores.",
+      "notes": [
+        "Acesso: D-Terminal, pelo NPC Dark Web Guide Izzy.",
+        "Pré-requisitos: missão Network Error (Central do DATS) e Digimon nível 150 ou superior. Grupo máximo: 2.",
+        "Estratégia alternativa: usar Golemon/Goldmon com Mystic Bell (Stun) para mitigar os status exigidos.",
+        "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
+      ]
+    },
+    {
+      "id": "gulus_hard",
+      "name": "Gulus Hard",
+      "full": "GulusGammamon [Hard]",
+      "tier": "extreme",
+      "boss": 160,
+      "ctReq": 600,
+      "htReq": 34000,
+      "hpReq": 140000,
+      "dpsReq": 1000000,
+      "recommendedLevel": "160 - 170+",
+      "desc": "Versão Hard do Gulus: o HP do boss escala violentamente, exigindo DPS de Rank U e sobrevivência extrema contra skills inevitáveis.",
+      "build": "Digimons Rank U (ou SSS+ de tier máximo) perfeitamente clonados. Altamente recomendado usar os buffs extras do Shadow Lab.",
+      "notes": [
+        "HP: 140,000–150,000+ (mínimo absoluto para sobreviver ao dano em área estendido).",
+        "HT: 34,000–36,000+. CT: 600%+.",
+        "DPS: 1,000,000+ (1kk+) por segundo.",
+        "O Gulus normal já exigia ~28.5k HT e 533% CT com 700k DPS."
+      ]
+    },
+    {
+      "id": "neverland",
+      "name": "Neverland",
+      "full": "Neverland (boss final: Eosmon)",
+      "tier": "extreme",
+      "boss": 170,
+      "bossEstimated": true,
+      "ctReq": 620,
+      "htReq": 32000,
+      "dpsReq": 4000000,
+      "desc": "Conteúdo ultra late game, recomendado para os Digimons mais fortes do servidor.",
+      "build": "Full dano de habilidade (Skill Damage).",
+      "notes": [
+        "Atenção extrema às mecânicas de círculos coloridos (brancos, amarelos e pretos): falhar causa morte instantânea.",
+        "HP: o máximo possível (full HP de segurança para evitar morte instantânea nas mecânicas).",
+        "Acesso: D-Terminal, pelo NPC Dungeon Guide Izzy.",
+        "Pré-requisitos: missão Anomaly (pré-requisito: To DATS Center) e Digimon nível 160 ou superior. Grupo máximo: 4.",
+        "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
+      ]
+    },
+    {
+      "id": "barbamon",
+      "name": "Barbamon",
+      "full": "Sanctuary of the Seven Demon Lords: Barbamon",
+      "tier": "extreme",
+      "boss": 178,
+      "ctReq": 600,
+      "htReq": 28500,
+      "hpReq": 200000,
+      "desc": "Dungeon end-game lançada junto com o sistema de Overclock. Chefe final: Barbamon (Demon Lord of Greed).",
+      "notes": [
+        "HP: 200,000+ (altamente recomendado ter suporte / Lucemon ou mecânicas de proteção no grupo).",
+        "O chefe tem mecânicas de dano massivo (instakill): exige alto DPS (Triple DPS no grupo) para pular fases, ou um jogador focado em proteger o time.",
+        "Pode surgir o Barbamon X como chefe secreto, necessário para missões de títulos especiais.",
+        "Acesso: D-Terminal, pelo NPC Alphamon / Dungeon Guide. Pré-requisitos: missão The Seven Demon Lords' Resurgence: Greed e Digimon nível 170 ou superior.",
+        "Grupo máximo: 4. Limite de tempo: 20 minutos. Limite de entradas: 8 por dia."
+      ]
+    },
+    {
+      "id": "belphemon",
+      "name": "Belphemon",
+      "full": "Sanctuary of the Seven Demon Lords: Belphemon",
+      "tier": "extreme",
+      "boss": 178,
+      "ctReq": 600,
+      "htReq": 28500,
+      "hpReq": 180000,
+      "desc": "Chefe final: Belphemon (Demon Lord of Sloth and Rampage). Diferente do Barbamon, que usa armadilhas, foca em destruição pura.",
+      "notes": [
+        "HP: 180,000 a 200,000+. O chefe tem um nuke em área massivo que dá instakill se o time estiver sem buffs de proteção.",
+        "Foco da equipe: DPS extremo + suporte perfeito (buffs de Miko coordenados, como dupla Miko) para não tomar one tap.",
+        "Círculo amarelo: não causa dano, mas se alguém do grupo for atingido, cura o chefe em 2% a 3% por jogador afetado.",
+        "Atacar o círculo amarelo tem chance de invocar o chefe secreto Belphemon Sleep Mode, necessário para o título secreto da masmorra.",
+        "Recompensa: materiais para criar e aprimorar a Sloth Bracelet (Pulseira da Preguiça) até o +10.",
+        "Acesso: Terminal das Chamas (Flame Terminal), pelo NPC Alphamon (Royal Knights). Pré-requisitos: ter completado antes a DG do Barbamon, missão The Seven Demon Lords' Resurgence: Sloth e Digimon nível 170 ou superior. Grupo máximo: 4."
+      ]
+    },
+    {
+      "id": "belial",
+      "name": "Belial",
+      "full": "Nightmare — BelialVamdemon / MaloMyotismon (Belial Lair)",
+      "tier": "extreme",
+      "boss": 180,
+      "bossEstimated": true,
+      "ctReq": 650,
+      "htReq": 33000,
+      "hpReq": 180000,
+      "dpsReq": 4000000,
+      "recommendedLevel": "171+",
+      "desc": "Exige um HT absurdo para acertar o boss fisicamente, por isso o foco é dano de skill.",
+      "build": "Full Skill Damage + Attribute Damage (Set Kizuna, Joias com Flat Skill/Atributo > 120%).",
+      "notes": [
+        "HP: 180,000+ (com suporte de Guardiões e Set Frontier 4).",
+        "HT: 38,000–39,000 para acerto físico no boss; 28,000–29,000 apenas para limpar os summons (Arukenimon).",
+        "DPS: alto e sustentado, através de rotação de mecânicas (a tabela da comunidade pede ~4kk).",
+        "Ataques normais dão muito miss. O meta é ignorar o acerto físico no Belial e matá-lo na rotação de Skill Damage / Dano Final.",
+        "Nível do boss e requisitos de CT/HT/DPS estimados a partir de uma tabela da comunidade."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+﻿<div class="tab-content" id="tab-digisoul">
+  <div class="dsc-layout">
+    <div class="dsc-left">
+      <div class="card">
+        <div class="card-title" data-i18n="dscBoardTitle">Circuito</div>
+        <div class="dsc-board" id="dscBoard"></div>
+        <div class="card-hint" data-i18n="dscBoardHint">Clique em um slot e depois em &darr; no m&oacute;dulo para equipar.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" data-i18n="dscEffectsTitle">Efeitos aplicados</div>
+        <div class="dsc-effects" id="dscEffects"></div>
+      </div>
+    </div>
+    <div class="dsc-right">
+      <div class="card">
+        <div class="card-title"><span data-i18n="dscModulesTitle">M&oacute;dulos</span> <span class="dsc-count" id="dscCount"></span></div>
+        <div class="dsc-toolbar">
+          <button type="button" class="btn-buscar" id="dscAddBtn" data-i18n="dscAdd">Adicionar m&oacute;dulo</button>
+          <button type="button" class="dsc-btn" id="dscExampleBtn" data-i18n="dscExample">Carregar exemplos</button>
+          <button type="button" class="dsc-btn dsc-btn-danger" id="dscClearBtn" data-i18n="dscClear">Limpar tudo</button>
+        </div>
+        <div class="dsc-msg" id="dscMsg" role="status"></div>
+        <form class="dsc-form" id="dscForm" hidden>
+          <div class="dsc-form-title" id="dscFormTitle"></div>
+          <div class="form-row dsc-row-preset">
+            <label for="dscPreset">Preset</label>
+            <select id="dscPreset"></select>
+            <button type="button" class="dsc-btn" id="dscPresetBtn">Usar</button>
+          </div>
+          <div class="form-row dsc-row-kind">
+            <label for="dscKind" data-i18n="dscKindLabel">Tipo</label>
+            <select id="dscKind"></select>
+            <label for="dscGrade" data-i18n="dscGradeLabel">Grau</label>
+            <select id="dscGrade"></select>
+          </div>
+          <div class="form-row dsc-row-name">
+            <label for="dscName" data-i18n="dscNameLabel">Nome</label>
+            <input type="text" id="dscName" maxlength="40" placeholder="Opcional" autocomplete="off" data-i18n="placeholder:dscNamePlaceholder">
+          </div>
+          <div id="dscLines"></div>
+          <div class="form-row dsc-row-actions">
+            <button type="submit" class="btn-buscar" id="dscSaveBtn">Adicionar</button>
+            <button type="button" class="dsc-btn" id="dscCancelBtn" data-i18n="dscCancel">Cancelar</button>
+          </div>
+        </form>
+        <div class="dsc-list" id="dscList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Aba Clothing ========== -->
+<div class="tab-content" id="tab-clothing">
+  <div id="clothingRoot"></div>
+</div>
+
+</div> <!-- /app-card -->
+
+<script src="digimon_data.js"></script>
+<script src="seal_data.js"></script>
+<script>
+  // Modulos ES e fetch nao funcionam via file://; avisa em vez de deixar a pagina sem vida
+  if (location.protocol === 'file:') {
+    document.body.insertAdjacentHTML('afterbegin',
+      '<div class="file-protocol-warning"><strong>Abra pelo servidor local.</strong> ' +
+      'Execute <code>python web/server.py</code> (no Windows: <code>py web/server.py</code>) e acesse <code>http://localhost:5000</code> ' +
+      '&mdash; abrir o arquivo direto n&atilde;o funciona.</div>');
+  }
+</script>
+<script type="module" src="js/main.js"></script>
+
+</body>
+</html>

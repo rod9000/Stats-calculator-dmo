@@ -115,9 +115,9 @@ export function sumEffects(state) {
     var sameKind = equipped.every(function(m) { return m.kind === kind; });
     if (sameKind) {
       var bonus = null;
-      if (kind === 'support') bonus = { HP: 14150, AT: 4120, DE: 2920, HT: 4120 };
+      if (kind === 'attack') bonus = { HP: 14150, DS: 19100, DE: 2920, EV: 1510 };
       else if (kind === 'defense') bonus = { DS: 19100, AT: 4120, EV: 1510, HT: 4120 };
-      else if (kind === 'attack') bonus = { HP: 14150, DS: 19100, DE: 2920, EV: 1510 };
+      else if (kind === 'support') bonus = { HP: 14150, AT: 4120, DE: 2920, HT: 4120 };
       if (bonus) {
         Object.keys(bonus).forEach(function(stat) {
           var t = totals[stat] || (totals[stat] = { flat: 0, pct: 0 });

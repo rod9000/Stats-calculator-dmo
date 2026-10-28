@@ -98,14 +98,35 @@ export function sumEffects(state) {
   var byId = {};
   state.modules.forEach(function(m) { byId[m.id] = m; });
   var totals = {};
+  var equipped = [];
   state.slots.forEach(function(id) {
     var m = id === null ? null : byId[id];
     if (!m) return;
+    equipped.push(m);
     m.lines.forEach(function(l) {
       var t = totals[l.stat] || (totals[l.stat] = { flat: 0, pct: 0 });
       t[l.pct ? 'pct' : 'flat'] += l.value;
     });
   });
+
+  // Bonus de conjunto: 9 modulos do mesmo tipo equipados.
+  if (equipped.length === DSC_SLOTS) {
+    var kind = equipped[0].kind;
+    var sameKind = equipped.every(function(m) { return m.kind === kind; });
+    if (sameKind) {
+      var bonus = null;
+      if (kind === 'support') bonus = { HP: 14150, AT: 4120, DE: 2920, HT: 4120 };
+      else if (kind === 'defense') bonus = { DS: 19100, AT: 4120, EV: 1510, HT: 4120 };
+      else if (kind === 'attack') bonus = { HP: 14150, DS: 19100, DE: 2920, EV: 1510 };
+      if (bonus) {
+        Object.keys(bonus).forEach(function(stat) {
+          var t = totals[stat] || (totals[stat] = { flat: 0, pct: 0 });
+          t.flat += bonus[stat];
+        });
+      }
+    }
+  }
+
   Object.keys(totals).forEach(function(k) {
     totals[k].flat = Math.round(totals[k].flat * 100) / 100;
     totals[k].pct = Math.round(totals[k].pct * 100) / 100;

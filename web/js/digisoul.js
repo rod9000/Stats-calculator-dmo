@@ -5,7 +5,7 @@ import { el } from './utils.js';
 import { tr, i18n } from './i18n.js';
 import { loadItem, saveItem } from './storage.js';
 import { DU_RANKS, DU_RANK_COLORS } from './dunit-data.js';
-import { DSC_SLOTS, DSC_CENTER, DSC_MAX_LINES, DSC_MAX_MODULES, DSC_KINDS, DSC_STATS, DSC_EXAMPLES } from './digisoul-data.js';
+import { DSC_SLOTS, DSC_CENTER, DSC_MAX_LINES, DSC_MAX_MODULES, DSC_KINDS, DSC_STATS, DSC_EXAMPLES, DSC_MODULE_PRESETS } from './digisoul-data.js';
 import { sanitizeState, sumEffects, addModule, updateModule, duplicateModule } from './digisoul-calc.js';
 
 var STORAGE_KEY = 'dsc.state';
@@ -264,6 +264,37 @@ export function initDigisoul() {
   var gradeSel = $('#dscGrade');
   DU_RANKS.forEach(function(r) { gradeSel.appendChild(option(r, r)); });
   gradeSel.value = 'SSS+';
+
+  var presetSel = $('#dscPreset');
+  function fillPresets() {
+    presetSel.textContent = '';
+    presetSel.appendChild(option('', '—'));
+    DSC_MODULE_PRESETS.forEach(function(p, i) { presetSel.appendChild(option(String(i), p.name)); });
+  }
+  fillPresets();
+
+  var presetBtn = $('#dscPresetBtn');
+  if (presetBtn) {
+    presetBtn.addEventListener('click', function() {
+      var idx = parseInt(presetSel.value);
+      if (isNaN(idx)) return;
+      var p = DSC_MODULE_PRESETS[idx];
+      if (!p) return;
+      resetForm();
+      $('#dscKind').value = p.kind;
+      gradeSel.value = p.grade;
+      $('#dscName').value = p.name;
+      p.lines.forEach(function(l, i) {
+        var lr = lineRows[i];
+        if (!lr) return;
+        lr.stat.value = l.stat;
+        lr.value.value = l.value;
+        lr.unit.value = l.pct ? 'pct' : 'flat';
+        lockUnit(lr);
+      });
+      notify('');
+    });
+  }
 
   var linesBox = $('#dscLines');
   for (var r = 0; r < DSC_MAX_LINES; r++) {

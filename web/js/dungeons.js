@@ -46,17 +46,16 @@ function statBar(label, need, check, idle) {
   fill.style.width = (check ? check.pct : 0) + '%';
   track.appendChild(fill);
   bar.appendChild(track);
-  if (check) bar.appendChild(el('div', 'dgcalc-dg-bar-pct', check.pct.toFixed(0) + '%'));
+  // sem avaliacao a linha do % fica vazia, mas existe: a barra tem a mesma altura com ou sem resultado
+  bar.appendChild(el('div', 'dgcalc-dg-bar-pct', check ? check.pct.toFixed(0) + '%' : ' '));
   return bar;
 }
 
-// Stat que a dungeon nao exige (ex.: CT do Belial)
-function notApplicableBar(label) {
-  var bar = el('div', 'dgcalc-dg-statbar');
-  var head = el('div', 'dgcalc-dg-bar-header');
-  head.appendChild(el('span', null, label));
-  head.appendChild(el('span', null, 'N/A'));
-  bar.appendChild(head);
+// Stat que a dungeon nao exige (HP/DPS das mais antigas, CT quando nao se aplica): a linha continua no card,
+// so que apagada e sem barra. Assim todos os cards tem o mesmo tamanho e as linhas ficam alinhadas entre eles.
+function absentBar(label, text) {
+  var bar = statBar(label, text, null, true);
+  bar.setAttribute('data-absent', 'true');
   return bar;
 }
 
@@ -124,7 +123,7 @@ function buildCard(dungeon, result, stats, openIds, onToggle) {
   body.appendChild(row);
 
   if (dungeon.ctReq == null) {
-    body.appendChild(notApplicableBar('Critical (CT)'));
+    body.appendChild(absentBar('Critical (CT)', 'N/A'));
   } else {
     body.appendChild(statBar('Critical (CT)', 'Need ' + dungeon.ctReq.toFixed(2), result && {
       eff: result.effectiveCT.toFixed(2), req: dungeon.ctReq.toFixed(2),
@@ -137,10 +136,11 @@ function buildCard(dungeon, result, stats, openIds, onToggle) {
     diff: formatDiff(result.htDiff), passes: result.htPasses, pct: result.htPct
   }));
 
-  // HP e DPS so sao avaliados se o jogador informou o valor; senao a barra fica esmaecida
+  // HP e DPS so sao avaliados se o jogador informou o valor; senao a barra fica esmaecida.
+  // Dungeon sem esse requisito mostra a linha apagada (absentBar) em vez de sumir com ela.
   [['HP', 'hp', 'hpReq'], ['DPS', 'dps', 'dpsReq']].forEach(function(m) {
     var req = dungeon[m[2]];
-    if (req == null) return;
+    if (req == null) { body.appendChild(absentBar(m[0], tr('dgNoReq'))); return; }
     var check = result && result[m[1]] && {
       eff: formatNum(stats[m[1]]), req: formatNum(req),
       diff: formatDiff(result[m[1]].diff), passes: result[m[1]].passes, pct: result[m[1]].pct
@@ -152,6 +152,11 @@ function buildCard(dungeon, result, stats, openIds, onToggle) {
     var details = buildDetails(dungeon, !!openIds[dungeon.id]);
     details.addEventListener('toggle', function() { onToggle(dungeon.id, details.open); });
     body.appendChild(details);
+  } else {
+    // sem detalhes: reserva a linha "Detalhes" para o card nao ficar menor que os outros
+    var spacer = el('div', 'dgcalc-dg-details dgcalc-dg-details-empty', ' ');
+    spacer.setAttribute('aria-hidden', 'true');
+    body.appendChild(spacer);
   }
 
   card.appendChild(body);

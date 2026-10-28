@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Digimon Master Online - Calculadora</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="clothing.css">
+<link rel="stylesheet" href="layout-fit.css" id="fitCss">
+<script>
+  // Layout escolhido no botao do cabecalho (padrao: "fit" = cabe na tela; "classic" = pagina rolavel como antes).
+  // Aplicado aqui, antes da pagina aparecer, para nao piscar no layout errado; js/layout.js cuida do botao.
+  (function() {
+    var mode = 'fit';
+    try { if (localStorage.getItem('dmo.layout') === 'classic') mode = 'classic'; } catch (e) {}
+    if (mode === 'classic') document.getElementById('fitCss').media = 'not all';
+    document.documentElement.setAttribute('data-layout', mode);
+  })();
+</script>
 </head>
 <body>
 
@@ -17,6 +29,7 @@
       <button class="lang-btn" data-lang="es">ES</button>
     </div>
     <button class="theme-toggle" id="themeToggle" data-i18n="themeDark">Modo Escuro</button>
+    <button class="layout-toggle" id="layoutToggle" type="button">Modo clássico</button>
   </div>
   <div class="header-title">
     <h1 data-i18n="h1">Digimon Master Online</h1>
@@ -33,6 +46,7 @@
   <button class="tab-btn" data-tab="dgcalc" data-i18n="tabDg">DG Calculator</button>
   <button class="tab-btn" data-tab="dunit" data-i18n="tabDunit">D-Unit</button>
   <button class="tab-btn" data-tab="digisoul" data-i18n="tabDigisoul">Digisoul Circuit</button>
+  <button class="tab-btn" data-tab="clothing" data-i18n="tabClothing">Equipamentos</button>
 </div>
 
 <!-- ===================== TAB 1: CALCULADORA ===================== -->
@@ -570,6 +584,11 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ========== Aba Clothing ========== -->
+<div class="tab-content" id="tab-clothing">
+  <div id="clothingRoot"></div>
 </div>
 
 </div> <!-- /app-card -->

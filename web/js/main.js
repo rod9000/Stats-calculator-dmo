@@ -2,6 +2,7 @@
 import { i18n, translateAll } from './i18n.js';
 import { initTabs } from './tabs.js';
 import { initTheme } from './theme.js';
+import { initLayout } from './layout.js';
 import { initLangSwitcher } from './lang-switcher.js';
 import { checkServer } from './digimon-search.js';
 import { initCalculator } from './calculator.js';
@@ -12,10 +13,12 @@ import { initSeals } from './seals.js';
 import { initDungeons } from './dungeons.js';
 import { initDunit } from './dunit.js';
 import { initDigisoul } from './digisoul.js';
+import { initClothing } from './clothing.js';
 
 function initApp() {
   initTabs();
   initTheme();
+  initLayout();
   initLangSwitcher();
   checkServer();
   initCalculator();
@@ -26,6 +29,7 @@ function initApp() {
   initDungeons();
   initDunit();
   initDigisoul();
+  initClothing();
 
   // O HTML esta em portugues; aplica o idioma salvo depois que tudo foi montado
   if (i18n._lang !== 'pt') translateAll();

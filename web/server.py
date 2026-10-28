@@ -12,12 +12,7 @@ import sys, os, json
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-# Add py/ to path so we can import calculadora_dmo
 _this_dir = os.path.dirname(os.path.abspath(__file__))
-_py_dir = os.path.join(os.path.dirname(_this_dir), "py")
-if _py_dir not in sys.path:
-    sys.path.insert(0, _py_dir)
-
 os.chdir(_this_dir)  # serve files from web/
 
 
@@ -36,7 +31,7 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json({"error": "missing name"}, 400)
                 return
             try:
-                from calculadora_dmo import search_digimon
+                from dmo_search import search_digimon
                 data = search_digimon(name)
                 if data:
                     src = data.get("_source", "cache")

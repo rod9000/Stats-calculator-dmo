@@ -3,8 +3,5 @@
 __pycache__/
 *.pyc
 _wiki_*.html
-py/_*.html
-py/*.py
-!py/calculadora_dmo.py
 web/.htaccess
 web/api.php

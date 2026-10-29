@@ -40,7 +40,7 @@ function buildCircuitLines() {
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.setAttribute('aria-hidden', 'true');
   var path = document.createElementNS(SVG_NS, 'path');
-  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250 M50 50L250 250 M250 50L50 250 M150 50L75 100 M150 50L225 100 M250 150L225 100 M250 150L225 200 M250 250L225 200 M150 250L225 200 M150 250L75 200 M50 250L75 200 M50 150L75 200 M50 150L75 100 M75 100L75 200 M225 100L225 200 M75 100L225 200 M225 100L75 200');
+  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250 M50 50L250 250 M250 50L50 250');
   svg.appendChild(path);
   return svg;
 }
@@ -227,8 +227,6 @@ export function initDigisoul() {
             if (k0===k1 && k1===k2) { hasLine = true; break; }
           }
           if (hasLine) {
-            paths.forEach(function(p) { p.classList.add('dsc-line-glow'); });
-          } else {
             paths.forEach(function(p) { p.classList.add('dsc-line-glow'); });
           }
         }

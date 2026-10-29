@@ -904,7 +904,11 @@ input.narrow { width: 70px; }
   width: 100%; max-width: 300px; aspect-ratio: 1; margin: 4px auto 10px;
 }
 .dsc-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.dsc-lines path { fill: none; stroke: var(--accent); stroke-width: 2; opacity: .55; vector-effect: non-scaling-stroke; }
+.dsc-lines path { fill: none; stroke: var(--accent); stroke-width: 2; opacity: .55; vector-effect: non-scaling-stroke; transition: opacity .25s, stroke-width .25s, filter .25s; }
+.dsc-lines path.dsc-line-glow {
+  opacity: 1; stroke-width: 3;
+  filter: drop-shadow(0 0 2px var(--accent)) drop-shadow(0 0 6px var(--accent));
+}
 .dsc-slot {
   position: relative; z-index: 1; margin: 12%;
   display: flex; flex-direction: column; align-items: center; justify-content: center;

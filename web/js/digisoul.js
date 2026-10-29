@@ -32,17 +32,31 @@ function option(value, text) {
   return o;
 }
 
-  // Linhas decorativas do circuito: anel externo + cruz ate o slot central
-  // + diagonais do slot superior (1) aos slots laterais da linha do meio (3 e 5)
+  // Linhas do circuito: anel externo + cruz e diagonais ate o slot central
+  // + losango (slots 2 e 8 ligados aos laterais 4 e 6). Cada trecho liga dois
+  // slots (indices 0-8) e brilha quando algum deles tem modulo equipado.
+var DSC_LINKS = [
+  [0, 1], [1, 2], [2, 5], [5, 8], [8, 7], [7, 6], [6, 3], [3, 0],
+  [1, 4], [4, 7], [3, 4], [4, 5],
+  [0, 4], [4, 8], [2, 4], [4, 6],
+  [1, 3], [1, 5], [7, 3], [7, 5]
+];
+
+function slotPoint(i) {
+  return (50 + 100 * (i % 3)) + ' ' + (50 + 100 * Math.floor(i / 3));
+}
+
 function buildCircuitLines() {
   var svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'dsc-lines');
   svg.setAttribute('viewBox', '0 0 300 300');
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.setAttribute('aria-hidden', 'true');
-  var path = document.createElementNS(SVG_NS, 'path');
-  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250 M50 50L250 250 M250 50L50 250 M150 50L50 150 M150 50L250 150');
-  svg.appendChild(path);
+  DSC_LINKS.forEach(function(link) {
+    var path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', 'M' + slotPoint(link[0]) + 'L' + slotPoint(link[1]));
+    svg.appendChild(path);
+  });
   return svg;
 }
 
@@ -191,6 +205,12 @@ export function initDigisoul() {
         node.appendChild(el('span', 'dsc-slot-plus', '+'));
       }
     });
+    // trecho do circuito brilha quando um dos slots que ele liga tem modulo equipado
+    var paths = dscSvg.querySelectorAll('path');
+    DSC_LINKS.forEach(function(link, n) {
+      var active = state.slots[link[0]] !== null || state.slots[link[1]] !== null;
+      paths[n].classList.toggle('dsc-line-glow', active);
+    });
   }
 
   // ---------- efeitos aplicados ----------
@@ -213,26 +233,6 @@ export function initDigisoul() {
     });
     if (!any) box.appendChild(el('div', 'dsc-empty', tr('dscEffectsEmpty')));
 
-    // Efeito nas linhas do circuito
-    if (dscSvg) {
-      var paths = dscSvg.querySelectorAll('path');
-      paths.forEach(function(p) { p.classList.remove('dsc-line-glow'); });
-      if (state.slots.every(function(id){ return id !== null; }) && state.slots.length === 9) {
-        var equipped = state.slots.map(function(id){ return findModule(id); }).filter(Boolean);
-        if (equipped.length === 9) {
-          var lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-          var hasLine = false;
-          for (var li=0; li<lines.length; li++) {
-            var ln = lines[li];
-            var k0 = equipped[ln[0]].kind, k1 = equipped[ln[1]].kind, k2 = equipped[ln[2]].kind;
-            if (k0===k1 && k1===k2) { hasLine = true; break; }
-          }
-          if (hasLine) {
-            paths.forEach(function(p) { p.classList.add('dsc-line-glow'); });
-          }
-        }
-      }
-    }
   }
 
   // ---------- lista de modulos ----------

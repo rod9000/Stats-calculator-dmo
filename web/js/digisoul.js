@@ -33,6 +33,7 @@ function option(value, text) {
 }
 
   // Linhas decorativas do circuito: anel externo + cruz ate o slot central
+  // + diagonais do slot superior (1) aos slots laterais da linha do meio (3 e 5)
 function buildCircuitLines() {
   var svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'dsc-lines');
@@ -40,7 +41,7 @@ function buildCircuitLines() {
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.setAttribute('aria-hidden', 'true');
   var path = document.createElementNS(SVG_NS, 'path');
-  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250 M50 50L250 250 M250 50L50 250');
+  path.setAttribute('d', 'M50 50H250V250H50Z M150 50V250 M50 150H250 M50 50L250 250 M250 50L50 250 M150 50L50 150 M150 50L250 150');
   svg.appendChild(path);
   return svg;
 }

@@ -602,7 +602,11 @@
 <div class="tab-content" id="tab-breakthrough">
   <div class="card">
     <div class="card-title" data-i18n="btTitle">Simulador de Breakthrough</div>
-    <div class="card-hint" data-i18n="btHint">Escolha os 3 stats positivos e os 2 negativos e clique na casa destacada de cada linha para tentar. Sucesso baixa a chance da pr&oacute;xima tentativa, falha aumenta.</div>
+    <div class="bt-modes" role="group" aria-label="Modo">
+      <button type="button" class="bt-mode active" id="btModeSim" aria-pressed="true" data-i18n="btModeSim">Simulador</button>
+      <button type="button" class="bt-mode" id="btModeHelper" aria-pressed="false" data-i18n="btModeHelper">Ajudante</button>
+    </div>
+    <div class="card-hint" id="btHint">Escolha os 3 stats positivos e os 2 negativos e clique na casa destacada de cada linha para tentar. Sucesso baixa a chance da pr&oacute;xima tentativa, falha aumenta.</div>
     <div class="bt-setup">
       <div class="bt-setup-group">
         <span class="bt-setup-label" data-i18n="btPositives">Positivos</span>
@@ -617,6 +621,26 @@
         <button type="button" class="btn-buscar" id="btResetBtn" data-i18n="btReset">Reiniciar</button>
       </div>
     </div>
+  </div>
+
+  <div class="card bt-real" id="btReal" hidden>
+    <div class="card-title" data-i18n="btRealTitle">Registrar o que saiu no jogo</div>
+    <div class="card-hint" data-i18n="btRealHint">Escolha os mesmos stats do jogo. A cada tentativa, informe a linha que voc&ecirc; clicou e o resultado; o site atualiza a chance e indica a pr&oacute;xima linha. Ele n&atilde;o prev&ecirc; o sorteio: mostra a chance de acertar.</div>
+    <div class="bt-real-next" id="btRealNext" role="status" aria-live="polite"></div>
+    <div class="bt-real-form">
+      <label class="bt-real-field"><span data-i18n="btRealRow">Linha que voc&ecirc; jogou</span>
+        <select id="btRealRow"></select></label>
+      <label class="bt-real-field"><span data-i18n="btRealChance">Chance mostrada no jogo (%)</span>
+        <input type="number" id="btRealChance" min="0" max="100" step="1"></label>
+    </div>
+    <div class="bt-real-buttons">
+      <button type="button" class="dsc-btn bt-res bt-res-fail" data-outcome="0" data-i18n="btResFail">Errou</button>
+      <button type="button" class="btn-buscar bt-res" data-outcome="1" data-i18n="btResOk1">Acertou</button>
+      <button type="button" class="btn-buscar bt-res" data-outcome="2" data-i18n="btResOk2">Acertou duplo</button>
+      <button type="button" class="btn-buscar bt-res" data-outcome="3" data-i18n="btResOk3">Acertou triplo</button>
+      <button type="button" class="dsc-btn" id="btRealUndo" data-i18n="btRealUndo">Desfazer</button>
+    </div>
+    <div class="card-hint bt-real-note" id="btRealNote"></div>
   </div>
 
   <div class="bt-top">

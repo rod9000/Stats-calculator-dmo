@@ -61,8 +61,13 @@ export function canRoll(run, rowIndex) {
 // Sucesso baixa um degrau de chance, falha sobe um. Devolve o que aconteceu (para a mensagem da tela).
 export function roll(run, rowIndex, rnd) {
   if (!canRoll(run, rowIndex)) return null;
+  return applyOutcome(run, rowIndex, rollOutcome(run.tier, rnd));
+}
+
+// Aplica um resultado ja conhecido (0 = falha, 1/2/3 = sucesso): sorteado em roll() ou informado pelo jogador (modo jogo real).
+export function applyOutcome(run, rowIndex, outcome) {
+  if (!canRoll(run, rowIndex)) return null;
   var row = run.rows[rowIndex];
-  var outcome = rollOutcome(run.tier, rnd);
   var from = row.next;
   var gained = 0;
   var span = outcome === 0 ? 1 : outcome;
@@ -84,6 +89,26 @@ export function roll(run, rowIndex, rnd) {
   run.rolls++;
   run.tier = outcome === 0 ? Math.max(0, run.tier - 1) : Math.min(BT_TIERS.length - 1, run.tier + 1);
   return { outcome: outcome, row: rowIndex, from: from, to: last, gained: gained };
+}
+
+// Copia independente da rodada (para desfazer).
+export function cloneRun(run) {
+  return {
+    rows: run.rows.map(function(r) { return { kind: r.kind, stat: r.stat, cells: r.cells.slice(), next: r.next, total: r.total }; }),
+    attemptsLeft: run.attemptsLeft, tier: run.tier, rolls: run.rolls
+  };
+}
+
+// Ajusta o degrau de chance ao valor que o jogo mostra. O modelo so tem os degraus de BT_TIERS:
+// usa o mais proximo (empate: o de menor chance, o mais cauteloso). Devolve o degrau e se o valor bateu exato.
+export function setTierByPercent(run, pct) {
+  var best = 0, bestDiff = Infinity;
+  BT_TIERS.forEach(function(t, i) {
+    var d = Math.abs(t.total - pct);
+    if (d < bestDiff || (d === bestDiff && t.total < BT_TIERS[best].total)) { best = i; bestDiff = d; }
+  });
+  run.tier = best;
+  return { tier: best, exact: bestDiff === 0 };
 }
 
 // Resultado liquido por stat (positivos menos negativos), so os stats que mudaram.

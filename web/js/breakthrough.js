@@ -4,7 +4,7 @@ import { $ } from './dom.js';
 import { el } from './utils.js';
 import { tr, i18n } from './i18n.js';
 import { BT_ATTEMPTS, BT_CELLS, BT_POSITIVES, BT_NEGATIVES, BT_STATS, BT_TIERS } from './breakthrough-data.js';
-import { statInfo, cellValue, rowMax, newRun, roll, canRoll, runFinished, summary, randomStats } from './breakthrough-calc.js';
+import { statInfo, cellValue, rowMax, newRun, roll, applyOutcome, cloneRun, setTierByPercent, canRoll, runFinished, summary, randomStats } from './breakthrough-calc.js';
 import { bestMove, evaluateMoves, utilityOf, NO_MOVE } from './breakthrough-advisor.js';
 
 var DEFAULT_WEIGHT = { pos: 1, neg: 0.2 }; // negativos pesam menos: costumam ser ignorados ou usados como descarte
@@ -17,6 +17,11 @@ export function initBreakthrough() {
   var run = null;
   var last = null; // ultimo resultado, para a mensagem acompanhar a troca de idioma
   var weights = [];
+  var mode = 'sim';    // 'sim' = simulador (sorteia), 'real' = ajudante (o jogador informa o resultado)
+  var saved = { sim: null, real: null }; // cada modo guarda a sua rodada; alternar nao mistura as duas
+  var history = [];   // modo ajudante: estados anteriores, para desfazer
+  var realPick = null; // linha escolhida a mao no modo jogo real (null = a recomendada)
+  var snapNote = '';   // aviso quando a chance digitada foi arredondada para um degrau do modelo
   var solver = { key: '', sol: null, worker: null, progress: 0, failed: false };
 
   for (var w = 0; w < BT_POSITIVES + BT_NEGATIVES; w++) weights.push(w < BT_POSITIVES ? DEFAULT_WEIGHT.pos : DEFAULT_WEIGHT.neg);
@@ -72,11 +77,47 @@ export function initBreakthrough() {
   function startRun() {
     run = newRun(selected(posSelects), selected(negSelects));
     last = null;
+    history = [];
+    realPick = null;
+    snapNote = '';
     ensureSolution();
     render();
   }
 
+  function realOn() { return mode === 'real'; }
+
+  // Troca simulador <-> ajudante. Cada um volta de onde parou; na primeira vez comeca uma rodada nova com os mesmos stats.
+  function setMode(next) {
+    if (next === mode) return;
+    saved[mode] = { run: run, last: last, history: history, realPick: realPick, snapNote: snapNote };
+    mode = next;
+    var s = saved[mode];
+    if (s) {
+      run = s.run; last = s.last; history = s.history; realPick = s.realPick; snapNote = s.snapNote;
+      posSelects.concat(negSelects).forEach(function(sel, i) { sel.value = run.rows[i].stat; });
+      ensureSolution();
+      render();
+    } else {
+      startRun();
+    }
+  }
+
+  function renderMode() {
+    var real = realOn();
+    $('#btModeSim').classList.toggle('active', !real);
+    $('#btModeHelper').classList.toggle('active', real);
+    $('#btModeSim').setAttribute('aria-pressed', String(!real));
+    $('#btModeHelper').setAttribute('aria-pressed', String(real));
+    $('#btRandomBtn').hidden = real; // sortear stats so faz sentido no simulador
+    $('#btHint').textContent = tr(real ? 'btHintHelper' : 'btHint');
+  }
+
   function rollRow(index) {
+    if (realOn()) { // no jogo real o clique so escolhe a linha; o resultado e informado no painel
+      realPick = index;
+      renderReal();
+      return;
+    }
     var res = roll(run, index, Math.random());
     if (!res) return;
     last = res;
@@ -240,7 +281,7 @@ export function initBreakthrough() {
         .replace('{value}', signed(r.kind === 'pos' ? last.gained : -last.gained, pct));
     }
     if (runFinished(run)) text += (text ? ' ' : '') + tr('btMsgDone');
-    box.textContent = text || tr('btMsgStart');
+    box.textContent = text || tr(realOn() ? 'btRealMsgStart' : 'btMsgStart');
     box.className = 'bt-msg' + (last ? (last.outcome === 0 ? ' fail' : ' ok') : '');
   }
 
@@ -305,8 +346,78 @@ export function initBreakthrough() {
     box.appendChild(alts);
   }
 
+  // ===================== MODO JOGO REAL =====================
+  function fmtNum(n) { return n.toLocaleString(locale(), { maximumFractionDigits: 1 }); }
+
+  function renderReal() {
+    var box = $('#btReal');
+    box.hidden = !realOn();
+    if (!realOn()) return;
+    var finished = runFinished(run);
+    var t = BT_TIERS[run.tier];
+    $('#btRealNext').textContent = finished ? tr('btMsgDone') :
+      tr('btRealNext').replace('{ok}', fmtNum(t.total)).replace('{fail}', fmtNum(100 - t.total))
+        .replace('{simple}', fmtNum(t.simple)).replace('{double}', fmtNum(t.double)).replace('{triple}', fmtNum(t.triple));
+
+    var rec = recommended();
+    var pending = [];
+    run.rows.forEach(function(r, i) { if (canRoll(run, i)) pending.push(i); });
+    var pick = pending.indexOf(realPick) !== -1 ? realPick : (pending.indexOf(rec) !== -1 ? rec : pending[0]);
+    var sel = $('#btRealRow');
+    sel.textContent = '';
+    pending.forEach(function(i) {
+      var o = el('option', '', rowLabel(i) + ' · ' + tr('btRealCell').replace('{cell}', run.rows[i].next + 1) + (i === rec ? ' ★' : ''));
+      o.value = String(i);
+      sel.appendChild(o);
+    });
+    if (pick !== undefined) sel.value = String(pick);
+    sel.disabled = finished;
+
+    $('#btRealChance').value = String(t.total);
+    $('#btRealChance').disabled = finished;
+    box.querySelectorAll('.bt-res').forEach(function(b) { b.disabled = finished; });
+    $('#btRealUndo').disabled = history.length === 0;
+    $('#btRealNote').textContent = snapNote;
+  }
+
+  function recordOutcome(outcome) {
+    var row = parseInt($('#btRealRow').value, 10);
+    if (isNaN(row)) return;
+    var before = cloneRun(run);
+    var res = applyOutcome(run, row, outcome);
+    if (!res) return;
+    history.push({ run: before, last: last });
+    last = res;
+    realPick = null;
+    snapNote = '';
+    render();
+  }
+
+  function undoReal() {
+    var h = history.pop();
+    if (!h) return;
+    run = h.run;
+    last = h.last;
+    realPick = null;
+    snapNote = '';
+    render();
+  }
+
+  // O jogador digita a chance que o jogo mostra; o modelo usa o degrau mais proximo e avisa quando nao bate exato.
+  function setChanceFromGame() {
+    var n = parseFloat(String($('#btRealChance').value).replace(',', '.'));
+    if (isNaN(n)) { renderReal(); return; }
+    var before = cloneRun(run);
+    var r = setTierByPercent(run, n);
+    if (before.tier !== run.tier) history.push({ run: before, last: last });
+    snapNote = r.exact ? '' : tr('btRealSnap').replace('{typed}', fmtNum(n)).replace('{tier}', BT_TIERS[r.tier].total);
+    render();
+  }
+
   function render() {
+    renderMode();
     renderStatus();
+    renderReal();
     var rec = recommended();
     var board = $('#btBoard');
     board.textContent = '';
@@ -333,6 +444,14 @@ export function initBreakthrough() {
     startRun();
   });
   $('#btAdviceOn').addEventListener('change', render);
+  $('#btModeSim').addEventListener('click', function() { setMode('sim'); });
+  $('#btModeHelper').addEventListener('click', function() { setMode('real'); });
+  $('#btRealRow').addEventListener('change', function() { realPick = parseInt(this.value, 10); });
+  $('#btRealChance').addEventListener('change', setChanceFromGame);
+  $('#btRealUndo').addEventListener('click', undoReal);
+  $('#btReal').querySelectorAll('.bt-res').forEach(function(b) {
+    b.addEventListener('click', function() { recordOutcome(parseInt(b.getAttribute('data-outcome'), 10)); });
+  });
 
   startRun();
 

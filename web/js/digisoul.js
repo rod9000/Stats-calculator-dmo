@@ -34,13 +34,23 @@ function option(value, text) {
 
   // Linhas do circuito: anel externo + cruz e diagonais ate o slot central
   // + losango (slots 2 e 8 ligados aos laterais 4 e 6). Cada trecho liga dois
-  // slots (indices 0-8) e brilha quando algum deles tem modulo equipado.
+  // slots (indices 0-8).
 var DSC_LINKS = [
   [0, 1], [1, 2], [2, 5], [5, 8], [8, 7], [7, 6], [6, 3], [3, 0],
   [1, 4], [4, 7], [3, 4], [4, 5],
   [0, 4], [4, 8], [2, 4], [4, 6],
   [1, 3], [1, 5], [7, 3], [7, 5]
 ];
+
+// Sequencias de 3 slots ligados: linhas retas do tabuleiro + volta do losango (1-3-7-5)
+var DSC_TRIPLES = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6],
+  [3, 1, 5], [1, 5, 7], [5, 7, 3], [7, 3, 1]
+];
+
+function linkKey(a, b) {
+  return a < b ? a + '-' + b : b + '-' + a;
+}
 
 function slotPoint(i) {
   return (50 + 100 * (i % 3)) + ' ' + (50 + 100 * Math.floor(i / 3));
@@ -205,11 +215,17 @@ export function initDigisoul() {
         node.appendChild(el('span', 'dsc-slot-plus', '+'));
       }
     });
-    // trecho do circuito brilha quando um dos slots que ele liga tem modulo equipado
+    // trecho do circuito brilha quando faz parte de uma sequencia de 3 slots equipados
+    var lit = {};
+    DSC_TRIPLES.forEach(function(t) {
+      if (t.every(function(i) { return state.slots[i] !== null; })) {
+        lit[linkKey(t[0], t[1])] = true;
+        lit[linkKey(t[1], t[2])] = true;
+      }
+    });
     var paths = dscSvg.querySelectorAll('path');
     DSC_LINKS.forEach(function(link, n) {
-      var active = state.slots[link[0]] !== null || state.slots[link[1]] !== null;
-      paths[n].classList.toggle('dsc-line-glow', active);
+      paths[n].classList.toggle('dsc-line-glow', !!lit[linkKey(link[0], link[1])]);
     });
   }
 

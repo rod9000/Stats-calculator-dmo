@@ -643,6 +643,13 @@
     </div>
   </div>
 
+  <div class="card bt-advice">
+    <div class="card-title" data-i18n="btAdviceTitle">Estrat&eacute;gia &oacute;tima</div>
+    <label class="bt-toggle"><input type="checkbox" id="btAdviceOn" checked> <span data-i18n="btAdviceOn">Recomendar jogada</span></label>
+    <div class="card-hint" data-i18n="btAdviceHint">N&atilde;o d&aacute; para mudar a chance de uma tentativa, s&oacute; escolher em qual linha clicar. Isto calcula, por programa&ccedil;&atilde;o din&acirc;mica, a melhor linha a cada passo para os stats e pesos escolhidos. Regra pr&aacute;tica: chance alta nos positivos, chance baixa (at&eacute; 35%) como descarte nos negativos.</div>
+    <div class="bt-advice-body" id="btAdvice" role="status" aria-live="polite"></div>
+  </div>
+
   <div class="card">
     <div class="bt-msg" id="btMsg" role="status" aria-live="polite"></div>
     <div class="bt-board" id="btBoard"></div>

@@ -105,8 +105,15 @@ export function initDigisoul() {
 
   // ---------- acoes ----------
   function equip(id) {
-    var target = selected !== null ? selected : state.slots.indexOf(null);
-    if (target === -1) { notify('dscNoSlot'); return; }
+    // slot selecionado, senao um slot vazio sorteado
+    var target = selected;
+    if (target === null) {
+      var empty = [];
+      state.slots.forEach(function(sid, i) { if (sid === null) empty.push(i); });
+      if (empty.length === 0) { notify('dscNoSlot'); return; }
+      target = empty[Math.floor(Math.random() * empty.length)];
+    }
+    selected = null; // a selecao vale para um modulo so; o proximo vai para um slot sorteado
     var current = state.slots.indexOf(id);
     if (current !== -1) state.slots[current] = null;
     var replaced = state.slots[target]; // quem ocupava o slot sai do circuito e volta para a lista

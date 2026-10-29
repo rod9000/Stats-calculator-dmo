@@ -1032,7 +1032,7 @@ input.narrow { width: 70px; }
 .bt-cell.zero { opacity: .6; }
 .bt-cell.ok { background: color-mix(in srgb, var(--success) 22%, var(--panel-bg)); border-color: var(--success); color: var(--label-fg); font-weight: 700; opacity: 1; }
 .bt-row.neg .bt-cell.ok { background: color-mix(in srgb, #dc2626 20%, var(--panel-bg)); border-color: #dc2626; }
-.bt-cell.fail { background: repeating-linear-gradient(135deg, var(--panel-bg), var(--panel-bg) 4px, var(--border) 4px, var(--border) 5px); font-size: 16px; opacity: .8; }
+.bt-cell.fail { background: repeating-linear-gradient(135deg, var(--panel-bg), var(--panel-bg) 4px, var(--border) 4px, var(--border) 5px); font-size: 16px; font-weight: 700; color: #dc2626; opacity: 1; }
 .bt-cell.next { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); opacity: 1; }
 .bt-cell-btn { width: 100%; height: 100%; border: 0; border-radius: 4px; background: transparent; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; }
 .bt-cell-btn:hover { background: var(--accent-soft); }

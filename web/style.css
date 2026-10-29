@@ -991,3 +991,54 @@ input.narrow { width: 70px; }
 @media (max-width: 768px) {
   .dsc-layout { grid-template-columns: 1fr; }
 }
+
+/* ===== BREAKTHROUGH ===== */
+.bt-setup { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.bt-setup-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.bt-setup-label { font-size: 12px; font-weight: 700; color: var(--sub-fg); text-transform: uppercase; letter-spacing: .03em; }
+.bt-selects { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.bt-select { min-width: 110px; }
+.bt-actions { display: flex; gap: 8px; margin-left: auto; }
+.bt-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+.bt-top .card { margin-bottom: 0; }
+.bt-status { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.bt-label { font-size: 12px; color: var(--sub-fg); font-weight: 600; margin-bottom: 4px; }
+.bt-attempts, .bt-chance { font-size: 26px; font-weight: 800; color: var(--label-fg); line-height: 1.1; }
+.bt-chance { color: var(--accent); }
+.bt-bar { height: 8px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 5px; overflow: hidden; margin-top: 8px; }
+.bt-bar-fill { height: 100%; width: 100%; background: var(--accent); transition: width .2s; }
+.bt-chance-detail { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--sub-fg); margin-top: 4px; }
+.bt-chance-detail b { color: var(--label-fg); }
+.bt-ladder { display: flex; gap: 3px; margin-top: 8px; }
+.bt-step { flex: 1; text-align: center; font-size: 11px; padding: 2px 0; border-radius: 4px; background: var(--panel-bg); border: 1px solid var(--border); color: var(--sub-fg); }
+.bt-step.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.bt-summary { display: flex; flex-wrap: wrap; gap: 6px; }
+.bt-chip { display: inline-flex; gap: 6px; align-items: baseline; padding: 4px 10px; border-radius: 14px; font-size: 13px; background: var(--panel-bg); border: 1px solid var(--border); }
+.bt-chip-name { color: var(--sub-fg); }
+.bt-chip.up b { color: var(--success); }
+.bt-chip.down b { color: #dc2626; }
+.bt-msg { min-height: 20px; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--sub-fg); }
+.bt-msg.ok { color: var(--success); }
+.bt-msg.fail { color: #dc2626; }
+.bt-board { display: flex; flex-direction: column; gap: 12px; }
+.bt-table-wrap { overflow-x: auto; }
+.bt-table { width: 100%; border-collapse: separate; border-spacing: 3px; min-width: 640px; }
+.bt-table th, .bt-table td { padding: 0; text-align: center; font-size: 12px; }
+.bt-table thead th { color: var(--sub-fg); font-weight: 700; padding: 2px 0; }
+.bt-table th.bt-stat { text-align: left; width: 96px; padding-right: 6px; color: var(--label-fg); font-size: 13px; }
+.bt-table thead th.bt-stat { color: var(--accent); }
+.bt-table .bt-total { width: 130px; font-size: 12px; white-space: nowrap; color: var(--sub-fg); }
+.bt-cell { height: 36px; min-width: 44px; border: 1px solid var(--border); border-radius: 5px; background: var(--panel-bg); color: var(--sub-fg); }
+.bt-cell.zero { opacity: .6; }
+.bt-cell.ok { background: color-mix(in srgb, var(--success) 22%, var(--panel-bg)); border-color: var(--success); color: var(--label-fg); font-weight: 700; opacity: 1; }
+.bt-row.neg .bt-cell.ok { background: color-mix(in srgb, #dc2626 20%, var(--panel-bg)); border-color: #dc2626; }
+.bt-cell.fail { background: repeating-linear-gradient(135deg, var(--panel-bg), var(--panel-bg) 4px, var(--border) 4px, var(--border) 5px); font-size: 16px; opacity: .8; }
+.bt-cell.next { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); opacity: 1; }
+.bt-cell-btn { width: 100%; height: 100%; border: 0; border-radius: 4px; background: transparent; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; }
+.bt-cell-btn:hover { background: var(--accent-soft); }
+.bt-cell-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bt-note { margin: 10px 0 0; }
+@media (max-width: 800px) {
+  .bt-top { grid-template-columns: 1fr; }
+  .bt-actions { margin-left: 0; }
+}

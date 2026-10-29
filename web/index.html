@@ -47,6 +47,7 @@
   <button class="tab-btn" data-tab="dunit" data-i18n="tabDunit">D-Unit</button>
   <button class="tab-btn" data-tab="digisoul" data-i18n="tabDigisoul">Digisoul Circuit</button>
   <button class="tab-btn" data-tab="clothing" data-i18n="tabClothing">Equipamentos</button>
+  <button class="tab-btn" data-tab="breakthrough" data-i18n="tabBreakthrough">Breakthrough</button>
 </div>
 
 <!-- ===================== TAB 1: CALCULADORA ===================== -->
@@ -595,6 +596,58 @@
 <!-- ========== Aba Clothing ========== -->
 <div class="tab-content" id="tab-clothing">
   <div id="clothingRoot"></div>
+</div>
+
+<!-- ========== Aba Breakthrough ========== -->
+<div class="tab-content" id="tab-breakthrough">
+  <div class="card">
+    <div class="card-title" data-i18n="btTitle">Simulador de Breakthrough</div>
+    <div class="card-hint" data-i18n="btHint">Escolha os 3 stats positivos e os 2 negativos e clique na casa destacada de cada linha para tentar. Sucesso baixa a chance da pr&oacute;xima tentativa, falha aumenta.</div>
+    <div class="bt-setup">
+      <div class="bt-setup-group">
+        <span class="bt-setup-label" data-i18n="btPositives">Positivos</span>
+        <span class="bt-selects" id="btPosSelects"></span>
+      </div>
+      <div class="bt-setup-group">
+        <span class="bt-setup-label" data-i18n="btNegatives">Negativos</span>
+        <span class="bt-selects" id="btNegSelects"></span>
+      </div>
+      <div class="bt-actions">
+        <button type="button" class="dsc-btn" id="btRandomBtn" data-i18n="btRandom">Sortear stats</button>
+        <button type="button" class="btn-buscar" id="btResetBtn" data-i18n="btReset">Reiniciar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bt-top">
+    <div class="card bt-status">
+      <div class="bt-status-col">
+        <div class="bt-label" data-i18n="btAttemptsLabel">Tentativas restantes</div>
+        <div class="bt-attempts" id="btAttempts">40/40</div>
+        <div class="bt-bar"><div class="bt-bar-fill" id="btAttemptsBar"></div></div>
+      </div>
+      <div class="bt-status-col">
+        <div class="bt-label" data-i18n="btChanceLabel">Chance de sucesso</div>
+        <div class="bt-chance" id="btChance">75%</div>
+        <div class="bt-chance-detail">
+          <span><span data-i18n="btSimple">Simples</span> <b id="btSimple"></b></span>
+          <span><span data-i18n="btDouble">Duplo</span> <b id="btDouble"></b></span>
+          <span><span data-i18n="btTriple">Triplo</span> <b id="btTriple"></b></span>
+        </div>
+        <div class="bt-ladder" id="btLadder"></div>
+      </div>
+    </div>
+    <div class="card bt-summary-card">
+      <div class="card-title" data-i18n="btSummaryTitle">Resultado l&iacute;quido</div>
+      <div class="bt-summary" id="btSummary"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bt-msg" id="btMsg" role="status" aria-live="polite"></div>
+    <div class="bt-board" id="btBoard"></div>
+    <div class="card-hint bt-note" data-i18n="btNote">Valores por casa conforme a tabela do simulador de refer&ecirc;ncia (wiki do DMO); n&atilde;o conferidos no jogo. Sucesso duplo/triplo preenche 2 ou 3 casas de uma vez; falha tamb&eacute;m gasta a casa.</div>
+  </div>
 </div>
 
 </div> <!-- /app-card -->

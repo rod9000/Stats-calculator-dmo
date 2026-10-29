@@ -14,6 +14,7 @@ import { initDungeons } from './dungeons.js';
 import { initDunit } from './dunit.js';
 import { initDigisoul } from './digisoul.js';
 import { initClothing } from './clothing.js';
+import { initBreakthrough } from './breakthrough.js';
 
 function initApp() {
   initTabs();
@@ -30,6 +31,7 @@ function initApp() {
   initDunit();
   initDigisoul();
   initClothing();
+  initBreakthrough();
 
   // O HTML esta em portugues; aplica o idioma salvo depois que tudo foi montado
   if (i18n._lang !== 'pt') translateAll();

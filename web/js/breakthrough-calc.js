@@ -1,7 +1,7 @@
 // Regras do Breakthrough, sem DOM (a tela fica em breakthrough.js).
 import {
   BT_ATTEMPTS, BT_CELLS, BT_POSITIVES, BT_NEGATIVES, BT_STATS,
-  BT_POSITIVE_CELLS, BT_NEGATIVE_CELLS, BT_TIERS
+  BT_POSITIVE_CELLS, BT_NEGATIVE_CELLS, BT_DEFAULT_MODEL
 } from './breakthrough-data.js';
 
 export function statInfo(key) {
@@ -24,11 +24,25 @@ export function rowMax(kind, stat) {
 }
 
 // Uma execucao nova: as linhas nao se confundem mesmo quando o mesmo stat aparece duas vezes.
-export function newRun(positives, negatives) {
+// model = modelo de chances da rodada (padrao: o assumido); run.tier e um indice em model.tiers.
+export function newRun(positives, negatives, model) {
   var rows = [];
   positives.forEach(function(s) { rows.push(makeRow('pos', s)); });
   negatives.forEach(function(s) { rows.push(makeRow('neg', s)); });
-  return { rows: rows, attemptsLeft: BT_ATTEMPTS, tier: 0, rolls: 0 };
+  model = model || BT_DEFAULT_MODEL;
+  return { rows: rows, attemptsLeft: BT_ATTEMPTS, tier: model.start, rolls: 0, model: model };
+}
+
+// Identificador do modelo, para saber se duas rodadas/estrategias usam as mesmas chances.
+export function modelKey(model) {
+  return JSON.stringify([model.tiers.map(function(t) { return [t.total, t.simple, t.double, t.triple]; }), model.onFail, model.onOk, model.start]);
+}
+
+// Troca o modelo no meio da rodada, mantendo a chance atual (o degrau do novo modelo mais proximo do valor de agora).
+export function swapModel(run, model) {
+  var now = run.model.tiers[run.tier].total;
+  run.model = model;
+  setTierByPercent(run, now);
 }
 
 function makeRow(kind, stat) {
@@ -38,8 +52,8 @@ function makeRow(kind, stat) {
 }
 
 // 0 = falha, 1/2/3 = sucesso simples/duplo/triplo. rnd e um numero em [0, 1).
-export function rollOutcome(tierIndex, rnd) {
-  var t = BT_TIERS[tierIndex];
+export function rollOutcome(model, tierIndex, rnd) {
+  var t = model.tiers[tierIndex];
   var r = rnd * 100;
   if (r < t.triple) return 3;
   if (r < t.triple + t.double) return 2;
@@ -61,7 +75,7 @@ export function canRoll(run, rowIndex) {
 // Sucesso baixa um degrau de chance, falha sobe um. Devolve o que aconteceu (para a mensagem da tela).
 export function roll(run, rowIndex, rnd) {
   if (!canRoll(run, rowIndex)) return null;
-  return applyOutcome(run, rowIndex, rollOutcome(run.tier, rnd));
+  return applyOutcome(run, rowIndex, rollOutcome(run.model, run.tier, rnd));
 }
 
 // Aplica um resultado ja conhecido (0 = falha, 1/2/3 = sucesso): sorteado em roll() ou informado pelo jogador (modo jogo real).
@@ -87,7 +101,7 @@ export function applyOutcome(run, rowIndex, outcome) {
   row.total = round1(row.total + gained);
   run.attemptsLeft--;
   run.rolls++;
-  run.tier = outcome === 0 ? Math.max(0, run.tier - 1) : Math.min(BT_TIERS.length - 1, run.tier + 1);
+  run.tier = outcome === 0 ? run.model.onFail[run.tier] : run.model.onOk[run.tier];
   return { outcome: outcome, row: rowIndex, from: from, to: last, gained: gained };
 }
 
@@ -95,17 +109,18 @@ export function applyOutcome(run, rowIndex, outcome) {
 export function cloneRun(run) {
   return {
     rows: run.rows.map(function(r) { return { kind: r.kind, stat: r.stat, cells: r.cells.slice(), next: r.next, total: r.total }; }),
-    attemptsLeft: run.attemptsLeft, tier: run.tier, rolls: run.rolls
+    attemptsLeft: run.attemptsLeft, tier: run.tier, rolls: run.rolls, model: run.model
   };
 }
 
-// Ajusta o degrau de chance ao valor que o jogo mostra. O modelo so tem os degraus de BT_TIERS:
+// Ajusta o degrau de chance ao valor que o jogo mostra. O modelo so tem os degraus de run.model.tiers:
 // usa o mais proximo (empate: o de menor chance, o mais cauteloso). Devolve o degrau e se o valor bateu exato.
 export function setTierByPercent(run, pct) {
+  var tiers = run.model.tiers;
   var best = 0, bestDiff = Infinity;
-  BT_TIERS.forEach(function(t, i) {
+  tiers.forEach(function(t, i) {
     var d = Math.abs(t.total - pct);
-    if (d < bestDiff || (d === bestDiff && t.total < BT_TIERS[best].total)) { best = i; bestDiff = d; }
+    if (d < bestDiff || (d === bestDiff && t.total < tiers[best].total)) { best = i; bestDiff = d; }
   });
   run.tier = best;
   return { tier: best, exact: bestDiff === 0 };

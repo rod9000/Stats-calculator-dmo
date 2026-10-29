@@ -2,7 +2,7 @@
 import { solve } from './breakthrough-advisor.js';
 
 self.onmessage = function(e) {
-  var sol = solve(e.data.rows, e.data.weights, function(p) { self.postMessage({ progress: p }); });
+  var sol = solve(e.data.rows, e.data.weights, e.data.model, function(p) { self.postMessage({ progress: p }); });
   var buffers = sol.policy.filter(Boolean).map(function(p) { return p.buffer; });
   self.postMessage({ done: true, sol: sol }, buffers);
 };

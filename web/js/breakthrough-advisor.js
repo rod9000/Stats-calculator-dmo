@@ -3,7 +3,7 @@
 //   +peso * total/maximo nas positivas, -peso * total/maximo nas negativas
 // (1 ponto = encher por completo uma linha positiva de peso 1). Programacao dinamica de tras para frente:
 // para cada estado guarda qual linha clicar. Nao ha como mudar a chance de uma tentativa, so a escolha da linha.
-import { BT_CELLS, BT_ATTEMPTS, BT_TIERS } from './breakthrough-data.js';
+import { BT_CELLS, BT_ATTEMPTS, BT_DEFAULT_MODEL } from './breakthrough-data.js';
 import { cellValue, rowMax, rollOutcome } from './breakthrough-calc.js';
 
 var NO_MOVE = 255;
@@ -29,15 +29,17 @@ function strides(R) {
 }
 
 // Devolve { policy: [Uint8Array por tentativas restantes (1..40)], value: utilidade esperada ao comecar }.
-export function solve(rows, weights, onProgress) {
+// model = degraus de chance e transicoes (padrao: o assumido). Os degraus podem ser de qualquer quantidade.
+export function solve(rows, weights, model, onProgress) {
+  model = model || BT_DEFAULT_MODEL;
   var R = rows.length;
   var pre = rewardTables(rows, weights);
-  var sz = strides(R), stride = sz.stride, S = sz.size, T = BT_TIERS.length;
+  var sz = strides(R), stride = sz.stride, S = sz.size, T = model.tiers.length;
   var prev = new Float32Array(T * S), cur = new Float32Array(T * S);
   var policy = [null];
   var ptr = new Int32Array(R);
   var pf = [], p1 = [], p2 = [], p3 = [];
-  BT_TIERS.forEach(function(t) {
+  model.tiers.forEach(function(t) {
     pf.push((100 - t.total) / 100); p1.push(t.simple / 100); p2.push(t.double / 100); p3.push(t.triple / 100);
   });
 
@@ -45,7 +47,7 @@ export function solve(rows, weights, onProgress) {
     var pol = new Uint8Array(T * S);
     for (var t = 0; t < T; t++) {
       var base = t * S;
-      var down = Math.max(0, t - 1) * S, up = Math.min(T - 1, t + 1) * S;
+      var down = model.onFail[t] * S, up = model.onOk[t] * S;
       var qf = pf[t], q1 = p1[t], q2 = p2[t], q3 = p3[t];
       ptr.fill(0);
       for (var idx = 0; idx < S; idx++) {
@@ -75,25 +77,25 @@ export function solve(rows, weights, onProgress) {
     var tmp = prev; prev = cur; cur = tmp;
     if (onProgress) onProgress(a / BT_ATTEMPTS);
   }
-  return { policy: policy, value: prev[0], stride: stride, size: S, pre: pre };
+  return { policy: policy, value: prev[model.start * S], stride: stride, size: S, pre: pre, model: model };
 }
 
 // Joga o resto da rodada. first = linha forcada na primeira jogada (ou -1 para seguir a politica).
 // chooser(a, t, idx, ptr) devolve a linha. Devolve a utilidade ganha daqui para frente.
-function playout(ptr0, tier0, attempts0, first, chooser, pre, stride, size, rnd) {
+function playout(ptr0, tier0, attempts0, first, chooser, pre, stride, size, model, rnd) {
   var R = ptr0.length, ptr = ptr0.slice(), t = tier0, gain = 0;
   var idx = 0;
   for (var r = 0; r < R; r++) idx += ptr[r] * stride[r];
   for (var a = attempts0; a >= 1; a--) {
     var row = (a === attempts0 && first >= 0) ? first : chooser(a, t, idx, ptr);
     if (row === NO_MOVE || row < 0 || ptr[row] >= BT_CELLS) break;
-    var k = rollOutcome(t, rnd());
+    var k = rollOutcome(model, t, rnd());
     var c = ptr[row];
     var span = k === 0 ? 1 : Math.min(k, BT_CELLS - c);
     if (k > 0) gain += pre[row][c + span] - pre[row][c];
     ptr[row] += span;
     idx += span * stride[row];
-    t = k === 0 ? Math.max(0, t - 1) : Math.min(BT_TIERS.length - 1, t + 1);
+    t = k === 0 ? model.onFail[t] : model.onOk[t];
   }
   return gain;
 }
@@ -114,7 +116,7 @@ export function evaluateMoves(sol, ptr, tier, attempts, n, rnd) {
   return ptr.map(function(c, r) {
     if (c >= BT_CELLS || attempts <= 0) return null;
     var sum = 0;
-    for (var i = 0; i < n; i++) sum += playout(ptr, tier, attempts, r, chooser, sol.pre, sol.stride, S, rnd);
+    for (var i = 0; i < n; i++) sum += playout(ptr, tier, attempts, r, chooser, sol.pre, sol.stride, S, sol.model, rnd);
     return sum / n;
   });
 }
@@ -130,7 +132,7 @@ export function bestMove(sol, ptr, tier, attempts) {
 // Para comparar: utilidade esperada (Monte Carlo) de uma estrategia simples, partindo do zero.
 export function evaluateStrategy(sol, chooser, n, rnd) {
   var R = sol.pre.length, ptr = new Array(R).fill(0), sum = 0;
-  for (var i = 0; i < n; i++) sum += playout(ptr, 0, BT_ATTEMPTS, -1, chooser, sol.pre, sol.stride, sol.size, rnd);
+  for (var i = 0; i < n; i++) sum += playout(ptr, sol.model.start, BT_ATTEMPTS, -1, chooser, sol.pre, sol.stride, sol.size, sol.model, rnd);
   return sum / n;
 }
 

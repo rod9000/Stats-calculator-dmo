@@ -54,3 +54,13 @@ export var BT_TIERS = [
   { total: 35, simple: 32.8, double: 2,  triple: 0.2 },
   { total: 25, simple: 23.9, double: 1,  triple: 0.1 }
 ];
+
+// Modelo de chances: degraus (do maior para o menor) e para qual degrau se vai ao errar (onFail) ou acertar (onOk).
+// O padrao e a escada acima, de um em um; breakthrough-learn.js monta um modelo ajustado com o que o jogador registrou.
+export var BT_DEFAULT_MODEL = {
+  tiers: BT_TIERS.map(function(t) { return { total: t.total, simple: t.simple, double: t.double, triple: t.triple }; }),
+  onFail: BT_TIERS.map(function(t, i) { return Math.max(0, i - 1); }),
+  onOk: BT_TIERS.map(function(t, i) { return Math.min(BT_TIERS.length - 1, i + 1); }),
+  start: 0,
+  learned: false
+};

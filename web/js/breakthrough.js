@@ -3,9 +3,11 @@
 import { $ } from './dom.js';
 import { el } from './utils.js';
 import { tr, i18n } from './i18n.js';
-import { BT_ATTEMPTS, BT_CELLS, BT_POSITIVES, BT_NEGATIVES, BT_STATS, BT_TIERS } from './breakthrough-data.js';
-import { statInfo, cellValue, rowMax, newRun, roll, applyOutcome, cloneRun, setTierByPercent, canRoll, runFinished, summary, randomStats } from './breakthrough-calc.js';
+import { BT_ATTEMPTS, BT_CELLS, BT_POSITIVES, BT_NEGATIVES, BT_STATS, BT_DEFAULT_MODEL } from './breakthrough-data.js';
+import { statInfo, cellValue, rowMax, newRun, modelKey, swapModel, roll, applyOutcome, cloneRun, setTierByPercent, canRoll, runFinished, summary, randomStats } from './breakthrough-calc.js';
 import { bestMove, evaluateMoves, utilityOf, NO_MOVE } from './breakthrough-advisor.js';
+import { loadLog, logAttempt, unlogAttempt, clearLog, exportText, importText, summarize, buildModel, levelRows } from './breakthrough-learn.js';
+import { loadItem, saveItem } from './storage.js';
 
 var DEFAULT_WEIGHT = { pos: 1, neg: 0.2 }; // negativos pesam menos: costumam ser ignorados ou usados como descarte
 var MOVES_SAMPLE = 15000;                  // partidas simuladas por jogada ao comparar alternativas
@@ -22,6 +24,9 @@ export function initBreakthrough() {
   var history = [];   // modo ajudante: estados anteriores, para desfazer
   var realPick = null; // linha escolhida a mao no modo jogo real (null = a recomendada)
   var snapNote = '';   // aviso quando a chance digitada foi arredondada para um degrau do modelo
+  var log = loadLog();     // tentativas registradas no Ajudante (localStorage); e delas que o modelo aprende
+  var runId = 0;           // id da rodada atual do Ajudante dentro do registro
+  var typedChance = null;  // chance que o jogador digitou para a proxima tentativa (so o que ele digita vira evidencia)
   var solver = { key: '', sol: null, worker: null, progress: 0, failed: false };
 
   for (var w = 0; w < BT_POSITIVES + BT_NEGATIVES; w++) weights.push(w < BT_POSITIVES ? DEFAULT_WEIGHT.pos : DEFAULT_WEIGHT.neg);
@@ -75,11 +80,13 @@ export function initBreakthrough() {
   function selected(list) { return list.map(function(s) { return s.value; }); }
 
   function startRun() {
-    run = newRun(selected(posSelects), selected(negSelects));
+    run = newRun(selected(posSelects), selected(negSelects), currentModel());
+    runId = Date.now();
     last = null;
     history = [];
     realPick = null;
     snapNote = '';
+    typedChance = null;
     ensureSolution();
     render();
   }
@@ -89,11 +96,11 @@ export function initBreakthrough() {
   // Troca simulador <-> ajudante. Cada um volta de onde parou; na primeira vez comeca uma rodada nova com os mesmos stats.
   function setMode(next) {
     if (next === mode) return;
-    saved[mode] = { run: run, last: last, history: history, realPick: realPick, snapNote: snapNote };
+    saved[mode] = { run: run, last: last, history: history, realPick: realPick, snapNote: snapNote, runId: runId, typedChance: typedChance };
     mode = next;
     var s = saved[mode];
     if (s) {
-      run = s.run; last = s.last; history = s.history; realPick = s.realPick; snapNote = s.snapNote;
+      run = s.run; last = s.last; history = s.history; realPick = s.realPick; snapNote = s.snapNote; runId = s.runId; typedChance = s.typedChance;
       posSelects.concat(negSelects).forEach(function(sel, i) { sel.value = run.rows[i].stat; });
       ensureSolution();
       render();
@@ -130,7 +137,7 @@ export function initBreakthrough() {
 
   // ===================== ESTRATEGIA (Worker) =====================
   function solveKey() {
-    return run.rows.map(function(r, i) { return r.kind + r.stat + ':' + weights[i]; }).join(',');
+    return run.rows.map(function(r, i) { return r.kind + r.stat + ':' + weights[i]; }).join(',') + '|' + modelKey(run.model);
   }
 
   // Resolve de novo so quando muda algo que altera a conta (stats ou pesos). Reiniciar com os mesmos reaproveita.
@@ -163,7 +170,7 @@ export function initBreakthrough() {
         solver.worker = null;
         renderAdvice();
       };
-      worker.postMessage({ rows: run.rows.map(function(r) { return { kind: r.kind, stat: r.stat }; }), weights: weights.slice() });
+      worker.postMessage({ rows: run.rows.map(function(r) { return { kind: r.kind, stat: r.stat }; }), weights: weights.slice(), model: run.model });
     } catch (err) {
       solver.failed = true;
     }
@@ -251,14 +258,14 @@ export function initBreakthrough() {
     var used = BT_ATTEMPTS - run.attemptsLeft;
     $('#btAttempts').textContent = run.attemptsLeft + '/' + BT_ATTEMPTS;
     $('#btAttemptsBar').style.width = (run.attemptsLeft / BT_ATTEMPTS * 100) + '%';
-    var t = BT_TIERS[run.tier];
+    var t = run.model.tiers[run.tier];
     $('#btChance').textContent = t.total + '%';
     $('#btSimple').textContent = t.simple + '%';
     $('#btDouble').textContent = t.double + '%';
     $('#btTriple').textContent = t.triple + '%';
     var ladder = $('#btLadder');
     ladder.textContent = '';
-    BT_TIERS.forEach(function(tier, i) {
+    run.model.tiers.forEach(function(tier, i) {
       ladder.appendChild(el('span', 'bt-step' + (i === run.tier ? ' on' : ''), tier.total + '%'));
     });
     $('#btResetBtn').disabled = used === 0;
@@ -354,7 +361,7 @@ export function initBreakthrough() {
     box.hidden = !realOn();
     if (!realOn()) return;
     var finished = runFinished(run);
-    var t = BT_TIERS[run.tier];
+    var t = run.model.tiers[run.tier];
     $('#btRealNext').textContent = finished ? tr('btMsgDone') :
       tr('btRealNext').replace('{ok}', fmtNum(t.total)).replace('{fail}', fmtNum(100 - t.total))
         .replace('{simple}', fmtNum(t.simple)).replace('{double}', fmtNum(t.double)).replace('{triple}', fmtNum(t.triple));
@@ -373,11 +380,28 @@ export function initBreakthrough() {
     if (pick !== undefined) sel.value = String(pick);
     sel.disabled = finished;
 
-    $('#btRealChance').value = String(t.total);
-    $('#btRealChance').disabled = finished;
+    var chanceInput = $('#btRealChance');
+    chanceInput.placeholder = String(t.total); // previsto pelo modelo; so o valor digitado conta como evidencia
+    if (document.activeElement !== chanceInput) chanceInput.value = typedChance === null ? '' : String(typedChance);
+    chanceInput.disabled = finished;
     box.querySelectorAll('.bt-res').forEach(function(b) { b.disabled = finished; });
     $('#btRealUndo').disabled = history.length === 0;
     $('#btRealNote').textContent = snapNote;
+  }
+
+  function learnOn() { return $('#btLearnOn').checked; }
+
+  // Modelo da rodada do Ajudante: o aprendido (se ligado e houver evidencia) ou o assumido. O simulador usa sempre o assumido.
+  function currentModel() {
+    return realOn() && learnOn() ? buildModel(summarize(log)) : BT_DEFAULT_MODEL;
+  }
+
+  // Depois de registrar, desfazer ou importar: se o modelo aprendido mudou, a rodada passa a usa-lo (mantendo a chance atual).
+  function refreshModel() {
+    if (!realOn()) return;
+    var m = currentModel();
+    if (modelKey(m) !== modelKey(run.model)) swapModel(run, m);
+    ensureSolution();
   }
 
   function recordOutcome(outcome) {
@@ -386,38 +410,145 @@ export function initBreakthrough() {
     var before = cloneRun(run);
     var res = applyOutcome(run, row, outcome);
     if (!res) return;
-    history.push({ run: before, last: last });
+    log = logAttempt(log, runId, typedChance, outcome);
+    history.push({ run: before, last: last, typed: typedChance, logged: true });
     last = res;
     realPick = null;
     snapNote = '';
+    typedChance = null;
+    refreshModel();
     render();
   }
 
   function undoReal() {
     var h = history.pop();
     if (!h) return;
+    if (h.logged) log = unlogAttempt(log, runId);
     run = h.run;
     last = h.last;
+    typedChance = h.typed;
     realPick = null;
     snapNote = '';
+    refreshModel();
     render();
   }
 
   // O jogador digita a chance que o jogo mostra; o modelo usa o degrau mais proximo e avisa quando nao bate exato.
   function setChanceFromGame() {
-    var n = parseFloat(String($('#btRealChance').value).replace(',', '.'));
-    if (isNaN(n)) { renderReal(); return; }
-    var before = cloneRun(run);
-    var r = setTierByPercent(run, n);
-    if (before.tier !== run.tier) history.push({ run: before, last: last });
-    snapNote = r.exact ? '' : tr('btRealSnap').replace('{typed}', fmtNum(n)).replace('{tier}', BT_TIERS[r.tier].total);
+    var input = $('#btRealChance');
+    var text = String(input.value).replace(',', '.').trim();
+    var snapshot = { run: cloneRun(run), last: last, typed: typedChance, logged: false };
+    if (text === '') { // apagou: volta a nao ter evidencia para esta tentativa
+      if (typedChance !== null) { history.push(snapshot); typedChance = null; }
+      snapNote = '';
+    } else {
+      var n = Math.round(parseFloat(text) * 10) / 10;
+      if (isNaN(n) || n <= 0 || n >= 100) {
+        snapNote = tr('btRealRange');
+      } else {
+        history.push(snapshot);
+        var r = setTierByPercent(run, n);
+        typedChance = n;
+        snapNote = r.exact ? '' : tr('btRealSnap').replace('{typed}', fmtNum(n)).replace('{tier}', run.model.tiers[r.tier].total);
+      }
+    }
+    input.value = typedChance === null ? '' : String(typedChance);
     render();
+  }
+
+  // ===================== APRENDIZADO =====================
+  // Destino que o modelo assumido preve para a chance c (null se c nao e um degrau assumido).
+  function assumedDest(c, which) {
+    var tiers = BT_DEFAULT_MODEL.tiers;
+    for (var i = 0; i < tiers.length; i++) {
+      if (tiers[i].total === c) return tiers[BT_DEFAULT_MODEL[which][i]].total;
+    }
+    return null;
+  }
+
+  function destCell(d, assumed) {
+    var td = el('td', 'bt-learn-dest');
+    if (!d) { td.textContent = '—'; return td; }
+    td.textContent = d.to + '% (' + d.count + '/' + d.total + ')';
+    if (assumed !== null && assumed !== d.to) {
+      td.classList.add('diff');
+      td.title = tr('btLearnDiff').replace('{a}', assumed);
+    }
+    return td;
+  }
+
+  function renderLearn() {
+    if (!realOn()) return;
+    var sum = summarize(log);
+    $('#btLearnStatus').textContent = tr('btLearnStatus')
+      .replace('{n}', sum.withChance).replace('{all}', sum.attempts).replace('{runs}', log.length) + ' ' +
+      tr(run.model.learned ? 'btLearnModelLearned' : 'btLearnModelDefault');
+    var box = $('#btLearnTable');
+    box.textContent = '';
+    var rows = levelRows(sum);
+    if (!rows.length) { box.appendChild(el('div', 'card-hint', tr('btLearnEmpty'))); return; }
+    var table = el('table', 'bt-table bt-learn-table');
+    var head = el('tr');
+    ['btLearnColChance', 'btLearnColN', 'btLearnColRate', 'btLearnColFail', 'btLearnColOk'].forEach(function(k) {
+      head.appendChild(el('th', '', tr(k)));
+    });
+    var thead = el('thead');
+    thead.appendChild(head);
+    table.appendChild(thead);
+    var tbody = el('tbody');
+    rows.forEach(function(r) {
+      var rowEl = el('tr');
+      rowEl.appendChild(el('td', 'bt-learn-c', r.c + '%'));
+      rowEl.appendChild(el('td', '', String(r.n)));
+      var rate = el('td', 'bt-learn-rate' + (r.off ? ' off' : ''),
+        Math.round(r.rate * 100) + '% (' + Math.round(r.lo * 100) + '–' + Math.round(r.hi * 100) + ')' + (r.off ? ' ⚠' : ''));
+      if (r.off) rate.title = tr('btLearnOff');
+      rowEl.appendChild(rate);
+      rowEl.appendChild(destCell(r.failTo, assumedDest(r.c, 'onFail')));
+      rowEl.appendChild(destCell(r.okTo, assumedDest(r.c, 'onOk')));
+      tbody.appendChild(rowEl);
+    });
+    table.appendChild(tbody);
+    var wrap = el('div', 'bt-table-wrap');
+    wrap.appendChild(table);
+    box.appendChild(wrap);
+  }
+
+  function learnMessage(key, n) { $('#btLearnMsg').textContent = key ? tr(key).replace('{n}', n) : ''; }
+
+  function downloadLog() {
+    var blob = new Blob([exportText(log)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'dmo-breakthrough-dados.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  function importFile(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      try {
+        var res = importText(log, String(reader.result));
+        log = res.log;
+        learnMessage('btLearnImported', res.added);
+        refreshModel();
+        render();
+      } catch (err) {
+        learnMessage('btLearnImportError', 0);
+      }
+    };
+    reader.readAsText(file);
   }
 
   function render() {
     renderMode();
     renderStatus();
     renderReal();
+    renderLearn();
     var rec = recommended();
     var board = $('#btBoard');
     board.textContent = '';
@@ -449,6 +580,23 @@ export function initBreakthrough() {
   $('#btRealRow').addEventListener('change', function() { realPick = parseInt(this.value, 10); });
   $('#btRealChance').addEventListener('change', setChanceFromGame);
   $('#btRealUndo').addEventListener('click', undoReal);
+  $('#btLearnOn').checked = loadItem('dmo.bt.learn') !== '0';
+  $('#btLearnOn').addEventListener('change', function() {
+    saveItem('dmo.bt.learn', this.checked ? '1' : '0');
+    refreshModel();
+    render();
+  });
+  $('#btLearnExport').addEventListener('click', downloadLog);
+  $('#btLearnImport').addEventListener('click', function() { $('#btLearnFile').click(); });
+  $('#btLearnFile').addEventListener('change', function() { importFile(this.files[0]); this.value = ''; });
+  $('#btLearnClear').addEventListener('click', function() {
+    if (!window.confirm(tr('btLearnConfirmClear'))) return;
+    log = clearLog();
+    learnMessage('', 0);
+    refreshModel();
+    render();
+  });
+
   $('#btReal').querySelectorAll('.bt-res').forEach(function(b) {
     b.addEventListener('click', function() { recordOutcome(parseInt(b.getAttribute('data-outcome'), 10)); });
   });

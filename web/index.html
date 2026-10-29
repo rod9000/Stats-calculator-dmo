@@ -641,6 +641,21 @@
       <button type="button" class="dsc-btn" id="btRealUndo" data-i18n="btRealUndo">Desfazer</button>
     </div>
     <div class="card-hint bt-real-note" id="btRealNote"></div>
+
+    <details class="bt-learn">
+      <summary data-i18n="btLearnTitle">Aprendizado do modelo</summary>
+      <div class="card-hint" data-i18n="btLearnHint">Digite a chance que o jogo mostra a cada tentativa: s&oacute; o que voc&ecirc; digita &eacute; usado para aprender. Com isso o site confere se a escada de chances assumida (75, 65, 55&hellip;) est&aacute; certa e, havendo evid&ecirc;ncia, passa a usar a que voc&ecirc; viu. Os dados ficam s&oacute; neste navegador: use Exportar para guardar uma c&oacute;pia ou levar para outro aparelho.</div>
+      <label class="bt-toggle"><input type="checkbox" id="btLearnOn" checked> <span data-i18n="btLearnOn">Usar o que aprendeu na estrat&eacute;gia</span></label>
+      <div class="bt-learn-status" id="btLearnStatus"></div>
+      <div id="btLearnTable"></div>
+      <div class="bt-learn-actions">
+        <button type="button" class="dsc-btn" id="btLearnExport" data-i18n="btLearnExport">Exportar dados</button>
+        <button type="button" class="dsc-btn" id="btLearnImport" data-i18n="btLearnImport">Importar dados</button>
+        <input type="file" id="btLearnFile" accept="application/json,.json" hidden>
+        <button type="button" class="dsc-btn dsc-btn-danger" id="btLearnClear" data-i18n="btLearnClear">Apagar dados</button>
+        <span class="bt-learn-msg" id="btLearnMsg" role="status"></span>
+      </div>
+    </details>
   </div>
 
   <div class="bt-top">
